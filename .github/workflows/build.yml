@@ -22,9 +22,10 @@ jobs:
         run: nuget install Microsoft.NETFramework.ReferenceAssemblies.net40 -Version 1.0.3 -OutputDirectory .\packages -NonInteractive
 
       - name: Build
-        shell: cmd
+        shell: pwsh
         run: |
-          msbuild Build\Build.xml /t:BuildSolution /p:PlatformToolset=v143 /p:FrameworkPathOverride="%GITHUB_WORKSPACE%\packages\Microsoft.NETFramework.ReferenceAssemblies.net40.1.0.3\build\.NETFramework\v4.0\"
+          $frameworkPath = Join-Path $env:GITHUB_WORKSPACE "packages\Microsoft.NETFramework.ReferenceAssemblies.net40.1.0.3\build\.NETFramework\v4.0"
+          msbuild Build\Build.xml /t:BuildSolution /p:PlatformToolset=v143 "/p:FrameworkPathOverride=$frameworkPath"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
