@@ -114,7 +114,7 @@ namespace SmartSystemMenu.Forms
                 var ptrCopyData = SystemUtils.BuildWmCopyDataPointer(SEND_CHILD_HANDLE, Handle.ToInt64().ToString());
                 if (ptrCopyData != IntPtr.Zero)
                 {
-                    SendMessage(_parentHandle, WM_COPYDATA, IntPtr.Zero, ptrCopyData);
+                    SendMessage(_parentHandle, WM_COPYDATA, Handle, ptrCopyData);
                 }
             }
 
@@ -266,26 +266,190 @@ namespace SmartSystemMenu.Forms
 
             if (m.Msg == WM_COPYDATA)
             {
-                var copyData = (CopyDataStruct)Marshal.PtrToStructure(m.LParam, typeof(CopyDataStruct));
-                var identifier = copyData.dwData.ToInt64();
-                if (identifier == SEND_CHILD_HANDLE)
-                {
-                    var handleString = Marshal.PtrToStringAnsi(copyData.lpData);
-                    _childHandle = long.TryParse(handleString, out var handleValue) ? new IntPtr(handleValue) : IntPtr.Zero;
-                }
-
-                if (identifier == MenuItemId.SC_HIDE || identifier == MenuItemId.SC_TRANS_DEFAULT || identifier == MenuItemId.SC_CLICK_THROUGH || identifier == MenuItemId.SC_DIMMER_OFF)
-                {
-                    MenuItemRestoreClick(this, new EventArgs<long>(identifier));
-                }
-
-                if (identifier == MenuItemId.SC_DIMMER_ON || identifier == MenuItemId.SC_DIMMER_OFF)
-                {
-                    HideDimWindows();
-                }
+                HandleCopyDataMessage(m);
             }
 
             base.WndProc(ref m);
+        }
+
+        private void HandleCopyDataMessage(Message message)
+        {
+            if (!TryReadCopyDataStruct(message.LParam, out var copyData))
+            {
+                return;
+            }
+
+            var identifier = copyData.dwData.ToInt64();
+            if (!IsSupportedCopyDataIdentifier(identifier))
+            {
+                return;
+            }
+
+            var senderHandle = message.WParam;
+            if (!IsTrustedCopyDataSender(senderHandle, identifier))
+            {
+                return;
+            }
+
+            if (identifier == SEND_CHILD_HANDLE)
+            {
+                if (!TryReadCopyDataString(copyData, 64, out var handleString))
+                {
+                    return;
+                }
+
+                if (!long.TryParse(handleString, out var handleValue))
+                {
+                    return;
+                }
+
+                var childHandle = new IntPtr(handleValue);
+                if (childHandle == IntPtr.Zero || childHandle != senderHandle || childHandle == Handle || childHandle == _parentHandle)
+                {
+                    return;
+                }
+
+                _childHandle = childHandle;
+                return;
+            }
+
+            if (identifier == MenuItemId.SC_HIDE || identifier == MenuItemId.SC_TRANS_DEFAULT || identifier == MenuItemId.SC_CLICK_THROUGH || identifier == MenuItemId.SC_DIMMER_OFF)
+            {
+                MenuItemRestoreClick(this, new EventArgs<long>(identifier));
+            }
+
+            if (identifier == MenuItemId.SC_DIMMER_ON || identifier == MenuItemId.SC_DIMMER_OFF)
+            {
+                HideDimWindows();
+            }
+        }
+
+        private bool IsSupportedCopyDataIdentifier(long identifier)
+        {
+            return identifier == SEND_CHILD_HANDLE ||
+                   identifier == MenuItemId.SC_HIDE ||
+                   identifier == MenuItemId.SC_TRANS_DEFAULT ||
+                   identifier == MenuItemId.SC_CLICK_THROUGH ||
+                   identifier == MenuItemId.SC_DIMMER_ON ||
+                   identifier == MenuItemId.SC_DIMMER_OFF;
+        }
+
+        private bool IsTrustedCopyDataSender(IntPtr senderHandle, long identifier)
+        {
+            if (senderHandle == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            if (!IsExpectedPeerSenderHandle(senderHandle, identifier))
+            {
+                return false;
+            }
+
+            if (GetWindowThreadProcessId(senderHandle, out int senderProcessId) == 0 || senderProcessId <= 0 || senderProcessId == _currentProcessId)
+            {
+                return false;
+            }
+
+            var senderProcess = SystemUtils.GetProcessByIdSafely(senderProcessId);
+            var senderPath = senderProcess?.GetMainModuleFileName();
+            return IsTrustedPeerExecutablePath(senderPath);
+        }
+
+        private bool IsExpectedPeerSenderHandle(IntPtr senderHandle, long identifier)
+        {
+            if (identifier == SEND_CHILD_HANDLE)
+            {
+                if (_parentHandle != IntPtr.Zero)
+                {
+                    return senderHandle == _parentHandle;
+                }
+
+                if (_childHandle != IntPtr.Zero)
+                {
+                    return senderHandle == _childHandle;
+                }
+
+                return true;
+            }
+
+            if (_parentHandle != IntPtr.Zero)
+            {
+                return senderHandle == _parentHandle;
+            }
+
+            return _childHandle != IntPtr.Zero && senderHandle == _childHandle;
+        }
+
+        private bool IsTrustedPeerExecutablePath(string executablePath)
+        {
+            if (!SystemUtils.TryResolveExecutablePath(executablePath, out var resolvedPath, out _))
+            {
+                return false;
+            }
+
+            var assemblyDirectory = Path.GetFullPath(AssemblyUtils.AssemblyDirectory);
+            var executableDirectory = Path.GetDirectoryName(resolvedPath);
+            if (!string.Equals(executableDirectory, assemblyDirectory, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var fileName = Path.GetFileName(resolvedPath);
+            return string.Equals(fileName, "SmartSystemMenu.exe", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(fileName, "SmartSystemMenu64.exe", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private bool TryReadCopyDataStruct(IntPtr lParam, out CopyDataStruct copyData)
+        {
+            copyData = default;
+            if (lParam == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            try
+            {
+                copyData = (CopyDataStruct)Marshal.PtrToStructure(lParam, typeof(CopyDataStruct));
+                if (copyData.cbData < 0)
+                {
+                    copyData = default;
+                    return false;
+                }
+
+                if (copyData.cbData > 0 && copyData.lpData == IntPtr.Zero)
+                {
+                    copyData = default;
+                    return false;
+                }
+
+                return true;
+            }
+            catch
+            {
+                copyData = default;
+                return false;
+            }
+        }
+
+        private bool TryReadCopyDataString(CopyDataStruct copyData, int maxLength, out string data)
+        {
+            data = null;
+            if (copyData.lpData == IntPtr.Zero || copyData.cbData <= 0 || copyData.cbData > maxLength)
+            {
+                return false;
+            }
+
+            try
+            {
+                data = Marshal.PtrToStringAnsi(copyData.lpData, copyData.cbData)?.TrimEnd('\0');
+                return !string.IsNullOrWhiteSpace(data);
+            }
+            catch
+            {
+                data = null;
+                return false;
+            }
         }
 
         private void MenuItemAutoStartClick(object sender, EventArgs e)
@@ -487,7 +651,7 @@ namespace SmartSystemMenu.Forms
                 var ptrCopyData = SystemUtils.BuildWmCopyDataPointer(e.Entity);
                 if (ptrCopyData != IntPtr.Zero)
                 {
-                    SendMessage(_childHandle, WM_COPYDATA, IntPtr.Zero, ptrCopyData);
+                    SendMessage(_childHandle, WM_COPYDATA, Handle, ptrCopyData);
                 }
             }
         }
@@ -1039,12 +1203,12 @@ namespace SmartSystemMenu.Forms
                                 {
                                     if (_childHandle != IntPtr.Zero)
                                     {
-                                        SendMessage(_childHandle, WM_COPYDATA, IntPtr.Zero, ptrCopyData);
+                                        SendMessage(_childHandle, WM_COPYDATA, Handle, ptrCopyData);
                                     }
 
                                     if (_parentHandle != IntPtr.Zero)
                                     {
-                                        SendMessage(_parentHandle, WM_COPYDATA, IntPtr.Zero, ptrCopyData);
+                                        SendMessage(_parentHandle, WM_COPYDATA, Handle, ptrCopyData);
                                     }
                                 }
                             }
@@ -1059,12 +1223,12 @@ namespace SmartSystemMenu.Forms
                                 {
                                     if (_childHandle != IntPtr.Zero)
                                     {
-                                        SendMessage(_childHandle, WM_COPYDATA, IntPtr.Zero, ptrCopyData);
+                                        SendMessage(_childHandle, WM_COPYDATA, Handle, ptrCopyData);
                                     }
 
                                     if (_parentHandle != IntPtr.Zero)
                                     {
-                                        SendMessage(_parentHandle, WM_COPYDATA, IntPtr.Zero, ptrCopyData);
+                                        SendMessage(_parentHandle, WM_COPYDATA, Handle, ptrCopyData);
                                     }
                                 }
 
