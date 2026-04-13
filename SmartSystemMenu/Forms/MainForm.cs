@@ -293,23 +293,30 @@ namespace SmartSystemMenu.Forms
             var keyName = AssemblyUtils.AssemblyProductName;
             var assemblyLocation = AssemblyUtils.AssemblyLocation;
             var autoStartEnabled = AutoStarter.IsAutoStartByRegisterEnabled(keyName, assemblyLocation);
+            var configureScheduler = Environment.OSVersion.Version.Major >= 6;
+            bool success;
+            string reason;
+
             if (autoStartEnabled)
             {
-                AutoStarter.UnsetAutoStartByRegister(keyName);
-                if (Environment.OSVersion.Version.Major >= 6)
-                {
-                    AutoStarter.UnsetAutoStartByScheduler(keyName);
-                }
+                success = AutoStarter.TryDisableAutoStart(keyName, configureScheduler, out reason);
             }
             else
             {
-                AutoStarter.SetAutoStartByRegister(keyName, assemblyLocation);
-                if (Environment.OSVersion.Version.Major >= 6)
-                {
-                    AutoStarter.SetAutoStartByScheduler(keyName, assemblyLocation);
-                }
+                success = AutoStarter.TryEnableAutoStart(keyName, assemblyLocation, configureScheduler, out reason);
             }
-            ((ToolStripMenuItem)sender).Checked = !autoStartEnabled;
+
+            if (!success)
+            {
+                var message = string.IsNullOrWhiteSpace(reason) ? "Autostart setup failed." : reason;
+                MessageBox.Show(message, "Security Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (sender is ToolStripMenuItem menuItem)
+            {
+                menuItem.Checked = !autoStartEnabled;
+            }
         }
 
         private void MenuItemHideByTargetClick(object sender, EventArgs e)
