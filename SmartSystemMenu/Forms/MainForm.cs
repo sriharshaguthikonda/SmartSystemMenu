@@ -414,6 +414,7 @@ namespace SmartSystemMenu.Forms
             {
                 _settingsForm = new ApplicationSettingsForm(_settings);
                 _settingsForm.OkClick += (object s, EventArgs<ApplicationSettings> ea) => { _settings = ea.Entity; };
+                _settingsForm.HideByTargetClick += MenuItemHideByTargetClick;
             }
 
             _settingsForm.Show();

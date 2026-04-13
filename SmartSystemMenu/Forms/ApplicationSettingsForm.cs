@@ -15,6 +15,7 @@ namespace SmartSystemMenu.Forms
         private readonly CloserSettings _closerSettings;
 
         public event EventHandler<EventArgs<ApplicationSettings>> OkClick;
+        public event EventHandler HideByTargetClick;
 
         public ApplicationSettingsForm(ApplicationSettings settings)
         {
@@ -96,9 +97,16 @@ namespace SmartSystemMenu.Forms
             trackbDimmerTransparency.Value = settings.Dimmer.Transparency;
             lblTransparencyValue.Text = $"{settings.Dimmer.Transparency}%";
             btnCloser.Text = settings.Language.GetValue("closer_button_name");
+            var hideByTargetText = settings.Language.GetValue("mi_hide_by_target");
+            btnHideWindowByTarget.Text = string.IsNullOrWhiteSpace(hideByTargetText) ? settings.Language.GetValue("hide") + "..." : hideByTargetText;
             btnApply.Text = settings.Language.GetValue("settings_btn_apply");
             btnCancel.Text = settings.Language.GetValue("settings_btn_cancel");
             Text = settings.Language.GetValue("settings_form");
+
+            var hideItemName = MenuItemId.GetName(MenuItemId.SC_HIDE);
+            var hideAny = settings.MenuItems.Items.Any(x => x.Type == MenuItemType.Item && x.Name == hideItemName && x.Show);
+            btnHideWindowByTarget.Enabled = hideAny;
+            btnHideWindowByTarget.Visible = hideAny;
 
             txtNextHotkeys.Text = _settings.NextMonitor.ToString();
             txtNextHotkeys.Tag = _settings.NextMonitor;
@@ -441,6 +449,12 @@ namespace SmartSystemMenu.Forms
                 _closerSettings.MouseButton = dialog.MouseButton;
                 _closerSettings.Type = dialog.CloserType;
             }
+        }
+
+        private void ButtonHideWindowByTargetClick(object sender, EventArgs e)
+        {
+            var handler = HideByTargetClick;
+            handler?.Invoke(this, EventArgs.Empty);
         }
 
         private void ButtonMenuItemUpClick(object sender, EventArgs e)

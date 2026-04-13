@@ -38,6 +38,7 @@ namespace SmartSystemMenu.Forms
             this.chkEnableHighDPI = new System.Windows.Forms.CheckBox();
             this.grpbCloser = new System.Windows.Forms.GroupBox();
             this.btnCloser = new System.Windows.Forms.Button();
+            this.btnHideWindowByTarget = new System.Windows.Forms.Button();
             this.grpbLanguage = new System.Windows.Forms.GroupBox();
             this.cmbLanguage = new System.Windows.Forms.ComboBox();
             this.grpbProcessExclusions = new System.Windows.Forms.GroupBox();
@@ -196,6 +197,7 @@ namespace SmartSystemMenu.Forms
             // 
             // grpbCloser
             // 
+            this.grpbCloser.Controls.Add(this.btnHideWindowByTarget);
             this.grpbCloser.Controls.Add(this.btnCloser);
             this.grpbCloser.Location = new System.Drawing.Point(11, 107);
             this.grpbCloser.Margin = new System.Windows.Forms.Padding(4);
@@ -214,6 +216,16 @@ namespace SmartSystemMenu.Forms
             this.btnCloser.TabIndex = 0;
             this.btnCloser.UseVisualStyleBackColor = true;
             this.btnCloser.Click += new System.EventHandler(this.ButtonWindowCloserClick);
+            // 
+            // btnHideWindowByTarget
+            // 
+            this.btnHideWindowByTarget.Location = new System.Drawing.Point(236, 32);
+            this.btnHideWindowByTarget.Margin = new System.Windows.Forms.Padding(4);
+            this.btnHideWindowByTarget.Name = "btnHideWindowByTarget";
+            this.btnHideWindowByTarget.Size = new System.Drawing.Size(149, 28);
+            this.btnHideWindowByTarget.TabIndex = 1;
+            this.btnHideWindowByTarget.UseVisualStyleBackColor = true;
+            this.btnHideWindowByTarget.Click += new System.EventHandler(this.ButtonHideWindowByTargetClick);
             // 
             // grpbLanguage
             // 
@@ -1166,6 +1178,7 @@ namespace SmartSystemMenu.Forms
         private System.Windows.Forms.DataGridView gvWindowSize;
         private System.Windows.Forms.GroupBox grpbCloser;
         private System.Windows.Forms.Button btnCloser;
+        private System.Windows.Forms.Button btnHideWindowByTarget;
         private System.Windows.Forms.GroupBox grpbLanguage;
         private System.Windows.Forms.GroupBox grpbSizer;
         private System.Windows.Forms.ComboBox cmbSizer;
