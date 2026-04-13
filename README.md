@@ -14,6 +14,7 @@ SmartSystemMenu extends system menu of all windows in the system. It appends nex
 
 * **Information.** Shows a dialog with information of the current window and process: the window handle, the window caption, the window style, the window class, the process name, the process id, the path to the process.
 * **Hide.** Allows to hide the current window.
+* **Hide By Target (Tray/Settings).** Allows to pick any visible window with a drag target and hide it immediately.
 * **Roll Up.** Allows to roll up and down the current window.
 * **Aero Glass.** Allows to add the "Aero Glass" blur to the current window. (Windows Vista and higher. Mostly for console windows.)
 * **Always On Top.** Allows the current window to stay on top of all other windows.
@@ -44,6 +45,14 @@ Screenshots
 ![Alignment](./SmartSystemMenu/Images/SmartSystemMenuEn2.png)
 ![Transparency](./SmartSystemMenu/Images/SmartSystemMenuEn3.png)
 ![Information](./SmartSystemMenu/Images/SmartSystemMenuEn4.png)
+
+Hide By Target Picker
+------------------
+
+1. Open SmartSystemMenu `Settings...`.
+2. Go to `General` and click `Hide...` in `Close Window By Mouse Click`.
+3. Drag the target icon onto the window you want to hide, then release.
+4. To restore hidden windows, use tray menu `Restore` -> `Hide`.
 
 Command Line Interface
 --------------------

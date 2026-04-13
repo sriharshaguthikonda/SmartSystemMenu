@@ -14,6 +14,7 @@ SmartSystemMenu는 시스템의 모든 창에 대한 시스템 메뉴를 확장�
 
 * **정보.** 현재 창과 프로세스에 대한 정보가 있는 대화 상자를 표시합니다. 여기에는 창 핸들, 창 캡션, 창 스타일, 창 클래스, 프로세스 이름, 프로세스 ID, 프로세스 경로가 포함됩니다.
 * **숨기기.** 현재 창을 숨길 수 있습니다.
+* **대상 드래그 숨기기(트레이/설정).** 십자선 대상 아이콘을 드래그해 표시된 창을 선택하고 즉시 숨길 수 있습니다.
 * **롤업.** 현재 창을 말아 올리거나 내릴 수 있습니다.
 * **에어로 글래스.** 현재 창에 "에어로 글래스" 흐림 효과를 추가할 수 있습니다. (Windows Vista 이상. 주로 콘솔 창에 사용됨)
 * **항상 맨 위에.** 현재 창을 다른 모든 창 위에 고정시킵니다.
@@ -44,6 +45,14 @@ SmartSystemMenu는 시스템의 모든 창에 대한 시스템 메뉴를 확장�
 ![Alignment](./SmartSystemMenu/Images/SmartSystemMenuKo2.png)
 ![Transparency](./SmartSystemMenu/Images/SmartSystemMenuKo3.png)
 ![Information](./SmartSystemMenu/Images/SmartSystemMenuKo4.png)
+
+대상 드래그 숨기기 사용 방법
+------------------
+
+1. SmartSystemMenu의 `Settings...`를 엽니다.
+2. `General` 탭에서 `Close Window By Mouse Click` 그룹의 `Hide...`를 클릭합니다.
+3. 대상 아이콘을 숨길 창으로 드래그한 뒤 마우스를 놓습니다.
+4. 숨긴 창을 복원하려면 트레이 메뉴 `Restore` -> `Hide`를 사용합니다.
 
 명령줄 인터페이스
 --------------------

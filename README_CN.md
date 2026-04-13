@@ -14,6 +14,7 @@ SmartSystemMenu 扩展了系统中所有窗口的系统菜单。 它会将下面
 
 * **详细信息.** 显示一个对话框，其中包含当前窗口和进程的信息：窗口句柄、窗口标题、窗口风格、窗口类、进程名称、进程ID、进程路径。
 * **隐藏.** 允许隐藏当前窗口。
+* **目标拖拽隐藏（托盘/设置）.** 使用拖拽准星选择任意可见窗口并立即隐藏。
 * **卷起窗口.** 将当前窗口向上卷起。
 * **毛玻璃效果.** 将 "毛玻璃效果" 模糊添加到当前窗口。(仅 Windows Vista 及更高版本支持。主要用于控制台窗口。)
 * **窗口始终置顶.** 将当前窗口保持在所有其他窗口之上。
@@ -44,6 +45,13 @@ SmartSystemMenu 扩展了系统中所有窗口的系统菜单。 它会将下面
 ![Alignment](./SmartSystemMenu/Images/SmartSystemMenuCn2.png)
 ![Transparency](./SmartSystemMenu/Images/SmartSystemMenuCn3.png)
 ![Information](./SmartSystemMenu/Images/SmartSystemMenuCn4.png)
+
+## 目标拖拽隐藏使用方法
+
+1. 打开 SmartSystemMenu 的 `Settings...`。
+2. 在 `General` 页签中，点击 `Close Window By Mouse Click` 分组里的 `Hide...`。
+3. 按住目标图标并拖到要隐藏的窗口上，松开鼠标即可立即隐藏。
+4. 需要恢复时，在托盘菜单中使用 `Restore` -> `Hide`。
 
 ## 命令行接口
 
@@ -132,4 +140,3 @@ SmartSystemMenu.exe --title "Untitled - Notepad" -a topleft -p high --alwaysonto
 ## 关于中文语言
 
 在第一次运行 SmartSystemMenu.exe 时，会自动检测系统语言环境，若为简体中文或繁体中文，自动应用对应的简体中文或繁体中文语言，后续亦可进入设置中修改显示语言，重新启动应用后生效。
-
