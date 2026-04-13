@@ -99,6 +99,14 @@ namespace SmartSystemMenu.Forms
                 return;
             }
 
+            if (!SystemUtils.TryResolveExecutablePath(txtFileName.Text, out _, out var executablePathError))
+            {
+                MessageBox.Show(executablePathError, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                txtFileName.SelectAll();
+                txtFileName.Focus();
+                return;
+            }
+
             MenuItem = new StartProgramMenuItem
             {
                 Title = txtTitle.Text,

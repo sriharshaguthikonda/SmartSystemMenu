@@ -93,27 +93,27 @@ namespace SmartSystemMenu
 
         public static void RunAs(string fileName, string arguments, bool showWindow, UserType userType, string workinDirectory = null)
         {
+            if (!TryResolveExecutablePath(fileName, out var fullFileName, out var errorMessage))
+            {
+                throw new ArgumentException(errorMessage, nameof(fileName));
+            }
+
             if (userType == UserType.Normal)
             {
-                RunAsDesktopUser(fileName, arguments, showWindow, workinDirectory);
+                RunAsDesktopUser(fullFileName, arguments, showWindow, workinDirectory);
             }
             else
             {
-                var fullFileNames = GetFullPaths(fileName);
-                if (fullFileNames.Any())
+                var process = new Process();
+                process.StartInfo.FileName = fullFileName;
+                process.StartInfo.Arguments = arguments;
+                process.StartInfo.WorkingDirectory = !string.IsNullOrEmpty(workinDirectory) ? workinDirectory : Path.GetDirectoryName(fullFileName);
+                if (!showWindow)
                 {
-                    var fullFileName = fullFileNames[0];
-                    var process = new Process();
-                    process.StartInfo.FileName = fullFileName;
-                    process.StartInfo.Arguments = arguments;
-                    process.StartInfo.WorkingDirectory = !string.IsNullOrEmpty(workinDirectory) ? workinDirectory : Path.GetDirectoryName(fullFileName);
-                    if (!showWindow)
-                    {
-                        process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                        process.StartInfo.CreateNoWindow = true;
-                    }
-                    process.Start();
+                    process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                    process.StartInfo.CreateNoWindow = true;
                 }
+                process.Start();
             }
         }
 
@@ -213,20 +213,13 @@ namespace SmartSystemMenu
                 // Start the target process with the new token.
                 var si = new STARTUPINFO();
                 var pi = new PROCESS_INFORMATION();
-
-                foreach (var fullFileName in GetFullPaths(fileName))
+                var commandLine = string.Format("\"{0}\" {1}", fileName, arguments);
+                if (!showWindow)
                 {
-                    var commandLine = string.Format("\"{0}\" {1}", fullFileName, arguments);
-                    if (!showWindow)
-                    {
-                        si.wShowWindow = SW_HIDE;
-                        si.dwFlags = STARTF_USESHOWWINDOW;
-                    }
-                    if (CreateProcessWithTokenW(hPrimaryToken, 0, fullFileName, commandLine, showWindow ? 0 : CREATE_NO_WINDOW, IntPtr.Zero, !string.IsNullOrEmpty(workinDirectory) ? workinDirectory : Path.GetDirectoryName(fullFileName), ref si, out pi))
-                    {
-                        break;
-                    }
+                    si.wShowWindow = SW_HIDE;
+                    si.dwFlags = STARTF_USESHOWWINDOW;
                 }
+                CreateProcessWithTokenW(hPrimaryToken, 0, fileName, commandLine, showWindow ? 0 : CREATE_NO_WINDOW, IntPtr.Zero, !string.IsNullOrEmpty(workinDirectory) ? workinDirectory : Path.GetDirectoryName(fileName), ref si, out pi);
             }
             finally
             {
@@ -238,7 +231,7 @@ namespace SmartSystemMenu
 
         public static string GetDefaultBrowserModuleName()
         {
-            var browserName = "iexplore.exe";
+            var browserName = GetAbsoluteSystemExecutablePath("explorer.exe");
             using var userChoiceKey = Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\http\\UserChoice");
             if (userChoiceKey == null)
             {
@@ -267,7 +260,7 @@ namespace SmartSystemMenu
                 {
                     path = path.Substring(0, path.LastIndexOf(exeSuffix, StringComparison.Ordinal) + exeSuffix.Length);
                 }
-                return path;
+                return TryResolveExecutablePath(path, out var fullPath, out _) ? fullPath : browserName;
             }
             catch
             {
@@ -275,24 +268,68 @@ namespace SmartSystemMenu
             }
         }
 
-        private static List<string> GetFullPaths(string fileName)
+        public static bool TryResolveExecutablePath(string fileName, out string fullPath, out string errorMessage)
         {
-            if (File.Exists(fileName))
+            fullPath = null;
+            errorMessage = null;
+
+            if (string.IsNullOrWhiteSpace(fileName))
             {
-                return new List<string> { Path.GetFullPath(fileName) };
+                errorMessage = "Executable path is required.";
+                return false;
             }
 
-            var fullPaths = new List<string>();
-            var values = Environment.GetEnvironmentVariable("PATH");
-            foreach (var path in values.Split(Path.PathSeparator))
+            var expandedPath = Environment.ExpandEnvironmentVariables(fileName.Trim().Trim('"'));
+            if (!Path.IsPathRooted(expandedPath))
             {
-                var fullPath = Path.Combine(path, fileName);
-                if (File.Exists(fullPath))
+                errorMessage = "Executable path must be an absolute path.";
+                return false;
+            }
+
+            try
+            {
+                fullPath = Path.GetFullPath(expandedPath);
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Executable path is invalid: {ex.Message}";
+                return false;
+            }
+
+            if (!File.Exists(fullPath))
+            {
+                errorMessage = $"Executable file was not found: {fullPath}";
+                return false;
+            }
+
+            return true;
+        }
+
+        public static string GetAbsoluteSystemExecutablePath(string executableName)
+        {
+            if (string.IsNullOrWhiteSpace(executableName))
+            {
+                return string.Empty;
+            }
+
+            var candidateDirectories = new[]
+            {
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                Environment.SystemDirectory,
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Internet Explorer"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Internet Explorer")
+            }.Where(path => !string.IsNullOrWhiteSpace(path));
+
+            foreach (var directory in candidateDirectories)
+            {
+                var candidatePath = Path.Combine(directory, executableName);
+                if (File.Exists(candidatePath))
                 {
-                    fullPaths.Add(fullPath);
+                    return candidatePath;
                 }
             }
-            return fullPaths;
+
+            return Path.Combine(Environment.SystemDirectory, executableName);
         }
 
         public static bool TerminateProcess(int processId, uint exitCode)

@@ -793,7 +793,8 @@ namespace SmartSystemMenu.Forms
                             {
                                 try
                                 {
-                                    SystemUtils.RunAs("explorer.exe", "/select, " + window.Process.GetMainModuleFileName(), true, UserType.Normal);
+                                    var explorerPath = SystemUtils.GetAbsoluteSystemExecutablePath("explorer.exe");
+                                    SystemUtils.RunAs(explorerPath, "/select, " + window.Process.GetMainModuleFileName(), true, UserType.Normal);
                                 }
                                 catch
                                 {
@@ -1193,6 +1194,11 @@ namespace SmartSystemMenu.Forms
                                 
                                 if (allParametersInputed)
                                 {
+                                    if (!SystemUtils.TryResolveExecutablePath(item.FileName, out _, out var executablePathError))
+                                    {
+                                        throw new InvalidOperationException(executablePathError);
+                                    }
+
                                     SystemUtils.RunAs(item.FileName, arguments, item.ShowWindow, item.RunAs, item.UseWindowWorkingDirectory ? Path.GetDirectoryName(processPath) : null);
                                 }
                             }

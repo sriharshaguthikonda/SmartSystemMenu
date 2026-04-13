@@ -370,7 +370,8 @@ namespace SmartSystemMenu
                 {
                     try
                     {
-                        SystemUtils.RunAs("explorer.exe", "/select, " + window.Process.GetMainModuleFileName(), true, UserType.Normal);
+                        var explorerPath = SystemUtils.GetAbsoluteSystemExecutablePath("explorer.exe");
+                        SystemUtils.RunAs(explorerPath, "/select, " + window.Process.GetMainModuleFileName(), true, UserType.Normal);
                     }
                     catch
                     {
