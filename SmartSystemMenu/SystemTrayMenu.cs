@@ -12,6 +12,7 @@ namespace SmartSystemMenu
     {
         private readonly ContextMenuStrip _systemTrayMenu;
         private readonly ToolStripMenuItem _menuItemAutoStart;
+        private readonly ToolStripMenuItem _menuItemHideByTarget;
         private readonly ToolStripMenuItem _menuItemRestore;
         private readonly ToolStripMenuItem _menuItemSettings;
         private readonly ToolStripMenuItem _menuItemAbout;
@@ -23,6 +24,7 @@ namespace SmartSystemMenu
         private bool _created;
 
         public event EventHandler MenuItemAutoStartClick;
+        public event EventHandler MenuItemHideByTargetClick;
         public event EventHandler MenuItemSettingsClick;
         public event EventHandler MenuItemAboutClick;
         public event EventHandler MenuItemExitClick;
@@ -31,6 +33,7 @@ namespace SmartSystemMenu
         public SystemTrayMenu(ApplicationSettings settings)
         {
             _menuItemAutoStart = new ToolStripMenuItem();
+            _menuItemHideByTarget = new ToolStripMenuItem();
             _menuItemRestore = new ToolStripMenuItem();
             _menuItemSettings = new ToolStripMenuItem();
             _menuItemAbout = new ToolStripMenuItem();
@@ -86,6 +89,8 @@ namespace SmartSystemMenu
                 var clickThroughAny = menuItems.Any(x => x.Type == MenuItemType.Item && x.Name == clickThroughItemName && x.Show);
                 var transparencyAny = menuItems.Any(x => x.Type == MenuItemType.Group && x.Name == transparencyItemName && x.Show);
                 var dimmerAny = menuItems.Any(x => x.Type == MenuItemType.Group && x.Name == dimmerItemName && x.Show);
+                var hideByTargetText = _settings.Language.GetValue("mi_hide_by_target");
+                hideByTargetText = string.IsNullOrWhiteSpace(hideByTargetText) ? _settings.Language.GetValue("hide") + "..." : hideByTargetText;
 
                 if (hideAny || clickThroughAny || transparencyAny || dimmerAny)
                 {
@@ -95,6 +100,11 @@ namespace SmartSystemMenu
 
                     if (hideAny)
                     {
+                        _menuItemHideByTarget.Name = "miHideByTarget";
+                        _menuItemHideByTarget.Size = new Size(175, 22);
+                        _menuItemHideByTarget.Text = hideByTargetText;
+                        _menuItemHideByTarget.Click += ItemHideByTargetClick;
+
                         var subMenuItem = new ToolStripMenuItem();
                         subMenuItem.Name = "miHide";
                         subMenuItem.Size = new Size(175, 22);
@@ -133,7 +143,14 @@ namespace SmartSystemMenu
                         _menuItemRestore.DropDownItems.Add(subMenuItem);
                     }
 
-                    _systemTrayMenu.Items.AddRange(new ToolStripItem[] { _menuItemAutoStart, _menuItemSeparator1, _menuItemRestore, _menuItemSettings, _menuItemAbout, _menuItemSeparator2, _menuItemExit });
+                    if (hideAny)
+                    {
+                        _systemTrayMenu.Items.AddRange(new ToolStripItem[] { _menuItemAutoStart, _menuItemSeparator1, _menuItemHideByTarget, _menuItemRestore, _menuItemSettings, _menuItemAbout, _menuItemSeparator2, _menuItemExit });
+                    }
+                    else
+                    {
+                        _systemTrayMenu.Items.AddRange(new ToolStripItem[] { _menuItemAutoStart, _menuItemSeparator1, _menuItemRestore, _menuItemSettings, _menuItemAbout, _menuItemSeparator2, _menuItemExit });
+                    }
                 }
                 else
                 {
@@ -169,6 +186,7 @@ namespace SmartSystemMenu
             if (disposing)
             {
                 _menuItemAutoStart?.Dispose();
+                _menuItemHideByTarget?.Dispose();
                 _menuItemRestore?.Dispose();
                 _menuItemSettings?.Dispose();
                 _menuItemAbout?.Dispose();
@@ -200,6 +218,12 @@ namespace SmartSystemMenu
                 var menuItemId = menuItem.Name == "miHide" ? MenuItemId.SC_HIDE : menuItem.Name == "miClickThrough" ? MenuItemId.SC_CLICK_THROUGH : menuItem.Name == "miTransparency" ? MenuItemId.SC_TRANS_DEFAULT : MenuItemId.SC_DIMMER_OFF;
                 handler.Invoke(sender, new EventArgs<long>(menuItemId));
             }
+        }
+
+        private void ItemHideByTargetClick(object sender, EventArgs e)
+        {
+            var handler = MenuItemHideByTargetClick;
+            handler?.Invoke(sender, e);
         }
 
         private void ItemSettingsClick(object sender, EventArgs e)

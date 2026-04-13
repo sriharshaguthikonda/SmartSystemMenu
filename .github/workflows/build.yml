@@ -1,0 +1,34 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+
+      - name: Install .NET 4.0 reference assemblies
+        run: nuget install Microsoft.NETFramework.ReferenceAssemblies.net40 -Version 1.0.3 -OutputDirectory .\packages -NonInteractive
+
+      - name: Build
+        shell: cmd
+        run: |
+          msbuild Build\Build.xml /t:BuildSolution /p:PlatformToolset=v143 /p:FrameworkPathOverride="%GITHUB_WORKSPACE%\packages\Microsoft.NETFramework.ReferenceAssemblies.net40.1.0.3\build\.NETFramework\v4.0\"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartSystemMenu-Application
+          path: Application\*
+          if-no-files-found: error

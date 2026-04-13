@@ -34,6 +34,7 @@ namespace SmartSystemMenu.Forms
         private ApplicationSettings _settings;
         private readonly WindowSettings _windowSettings;
         private readonly IntPtr _parentHandle;
+        private readonly int _currentProcessId;
         private IntPtr _childHandle;
         private IntPtr _dimHandle;
 
@@ -50,6 +51,7 @@ namespace SmartSystemMenu.Forms
             _settings = settings;
             _windowSettings = windowSettings;
             _parentHandle = parentHandle;
+            _currentProcessId = Process.GetCurrentProcess().Id;
             _childHandle = IntPtr.Zero;
             _dimHandle = IntPtr.Zero;
             _dimForms = new List<DimForm>();
@@ -90,6 +92,7 @@ namespace SmartSystemMenu.Forms
             {
                 _systemTrayMenu = new SystemTrayMenu(_settings);
                 _systemTrayMenu.MenuItemAutoStartClick += MenuItemAutoStartClick;
+                _systemTrayMenu.MenuItemHideByTargetClick += MenuItemHideByTargetClick;
                 _systemTrayMenu.MenuItemSettingsClick += MenuItemSettingsClick;
                 _systemTrayMenu.MenuItemAboutClick += MenuItemAboutClick;
                 _systemTrayMenu.MenuItemExitClick += MenuItemExitClick;
@@ -309,6 +312,16 @@ namespace SmartSystemMenu.Forms
             ((ToolStripMenuItem)sender).Checked = !autoStartEnabled;
         }
 
+        private void MenuItemHideByTargetClick(object sender, EventArgs e)
+        {
+            using var pickerForm = new WindowTargetPickerForm(_settings.Language, IsInvalidTargetHandle);
+            var result = pickerForm.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                HideWindowByHandle(pickerForm.SelectedHandle);
+            }
+        }
+
         private void MenuItemAboutClick(object sender, EventArgs e)
         {
             if (_aboutForm == null || _aboutForm.IsDisposed || !_aboutForm.IsHandleCreated)
@@ -317,6 +330,82 @@ namespace SmartSystemMenu.Forms
             }
             _aboutForm.Show();
             _aboutForm.Activate();
+        }
+
+        private bool IsInvalidTargetHandle(IntPtr handle)
+        {
+            if (handle == IntPtr.Zero)
+            {
+                return true;
+            }
+
+            handle = WindowUtils.GetParentWindow(handle);
+            if (handle == IntPtr.Zero)
+            {
+                return true;
+            }
+
+            if (handle == Handle || handle == _parentHandle || handle == _childHandle)
+            {
+                return true;
+            }
+
+            if (WindowUtils.IsDesktopWindow(handle))
+            {
+                return true;
+            }
+
+            var className = WindowUtils.GetClassName(handle);
+            if (className == "Shell_TrayWnd" || className == "Shell_SecondaryTrayWnd")
+            {
+                return true;
+            }
+
+            var processId = WindowUtils.GetProcessId(handle);
+            if (processId == _currentProcessId)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private void HideWindowByHandle(IntPtr handle)
+        {
+            if (_windows == null || handle == IntPtr.Zero)
+            {
+                return;
+            }
+
+            handle = WindowUtils.GetParentWindow(handle);
+            if (IsInvalidTargetHandle(handle))
+            {
+                return;
+            }
+
+            var window = _windows.TryGetValue(handle, out var existingWindow) ? existingWindow : null;
+            if (window == null)
+            {
+                GetWindowThreadProcessId(handle, out int processId);
+                var process = SystemUtils.GetProcessByIdSafely(processId);
+                var processPath = process?.GetMainModuleFileName() ?? string.Empty;
+
+                window = new Window(handle, _settings.MenuItems, _settings.Language);
+                CreateMenu(window, processId, processPath);
+                if (!_windows.TryGetValue(handle, out var trackedWindow))
+                {
+                    _windows[handle] = window;
+                }
+                else
+                {
+                    window = trackedWindow;
+                }
+            }
+
+            if (!window.IsHidden)
+            {
+                window.Hide();
+            }
         }
 
         private void MenuItemSettingsClick(object sender, EventArgs e)
