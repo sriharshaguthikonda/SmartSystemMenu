@@ -6,6 +6,7 @@ using System.Linq;
 using System.Windows.Forms;
 using SmartSystemMenu.Settings;
 using SmartSystemMenu.Extensions;
+using SmartSystemMenu.Utils;
 
 namespace SmartSystemMenu
 {
@@ -187,6 +188,7 @@ namespace SmartSystemMenu
 
                 _systemTrayMenu.Name = "systemTrayMenu";
                 _systemTrayMenu.Size = new Size(176, 80);
+                ThemeUtils.ApplyTheme(_systemTrayMenu, _settings.ThemeMode);
 
                 _icon.ContextMenuStrip = _systemTrayMenu;
                 _icon.Icon = Properties.Resources.SmartSystemMenu;
@@ -196,6 +198,11 @@ namespace SmartSystemMenu
 
                 _created = true;
             }
+        }
+
+        public void ApplyTheme()
+        {
+            ThemeUtils.ApplyTheme(_systemTrayMenu, _settings.ThemeMode);
         }
 
         public void CheckMenuItemAutoStart(bool check)

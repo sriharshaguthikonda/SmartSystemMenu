@@ -35,6 +35,8 @@ namespace SmartSystemMenu.Forms
             this.tabMain = new System.Windows.Forms.TabControl();
             this.tabpGeneral = new System.Windows.Forms.TabPage();
             this.grpbDisplay = new System.Windows.Forms.GroupBox();
+            this.lblTheme = new System.Windows.Forms.Label();
+            this.cmbTheme = new System.Windows.Forms.ComboBox();
             this.chkEnableHighDPI = new System.Windows.Forms.CheckBox();
             this.grpbCloser = new System.Windows.Forms.GroupBox();
             this.btnCloser = new System.Windows.Forms.Button();
@@ -177,6 +179,8 @@ namespace SmartSystemMenu.Forms
             // 
             // grpbDisplay
             // 
+            this.grpbDisplay.Controls.Add(this.lblTheme);
+            this.grpbDisplay.Controls.Add(this.cmbTheme);
             this.grpbDisplay.Controls.Add(this.chkEnableHighDPI);
             this.grpbDisplay.Location = new System.Drawing.Point(412, 107);
             this.grpbDisplay.Margin = new System.Windows.Forms.Padding(4);
@@ -185,11 +189,31 @@ namespace SmartSystemMenu.Forms
             this.grpbDisplay.Size = new System.Drawing.Size(400, 85);
             this.grpbDisplay.TabIndex = 2;
             this.grpbDisplay.TabStop = false;
+            //
+            // lblTheme
+            //
+            this.lblTheme.AutoSize = true;
+            this.lblTheme.Location = new System.Drawing.Point(8, 26);
+            this.lblTheme.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblTheme.Name = "lblTheme";
+            this.lblTheme.Size = new System.Drawing.Size(53, 17);
+            this.lblTheme.TabIndex = 2;
+            this.lblTheme.Text = "Theme";
+            //
+            // cmbTheme
+            //
+            this.cmbTheme.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbTheme.FormattingEnabled = true;
+            this.cmbTheme.Location = new System.Drawing.Point(80, 23);
+            this.cmbTheme.Margin = new System.Windows.Forms.Padding(4);
+            this.cmbTheme.Name = "cmbTheme";
+            this.cmbTheme.Size = new System.Drawing.Size(168, 24);
+            this.cmbTheme.TabIndex = 1;
             // 
             // chkEnableHighDPI
             // 
             this.chkEnableHighDPI.AutoSize = true;
-            this.chkEnableHighDPI.Location = new System.Drawing.Point(8, 34);
+            this.chkEnableHighDPI.Location = new System.Drawing.Point(8, 56);
             this.chkEnableHighDPI.Margin = new System.Windows.Forms.Padding(4);
             this.chkEnableHighDPI.Name = "chkEnableHighDPI";
             this.chkEnableHighDPI.Size = new System.Drawing.Size(18, 17);
@@ -1198,6 +1222,8 @@ namespace SmartSystemMenu.Forms
         private System.Windows.Forms.Button btnMenuItemDown;
         private System.Windows.Forms.Button btnMenuItemUp;
         private System.Windows.Forms.GroupBox grpbDisplay;
+        private System.Windows.Forms.Label lblTheme;
+        private System.Windows.Forms.ComboBox cmbTheme;
         private System.Windows.Forms.CheckBox chkEnableHighDPI;
         private System.Windows.Forms.TabPage tabpMenuSaveSelectedItems;
         private System.Windows.Forms.GroupBox grpbSaveSelectedItems;

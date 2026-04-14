@@ -8,6 +8,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Threading;
 using System.Runtime.InteropServices;
+using Microsoft.Win32;
 using SmartSystemMenu.Extensions;
 using SmartSystemMenu.Utils;
 using SmartSystemMenu.Hooks;
@@ -102,6 +103,12 @@ namespace SmartSystemMenu.Forms
                 _systemTrayMenu.CheckMenuItemAutoStart(AutoStarter.IsAutoStartByRegisterEnabled(AssemblyUtils.AssemblyProductName, AssemblyUtils.AssemblyLocation));
             }
 
+            ThemeUtils.ApplyTheme(this, _settings.ThemeMode);
+            ThemeUtils.ApplyThemeToOpenForms(_settings.ThemeMode);
+#if WIN32
+            _systemTrayMenu?.ApplyTheme();
+#endif
+
             _hotKeyMouseHook = new MouseHook();
             _hotKeyMouseHook.Hooked += HotKeyMouseHooked;
             if (_settings.Closer.MouseButton != MouseButton.None)
@@ -182,6 +189,8 @@ namespace SmartSystemMenu.Forms
             _hotKeyHook.MoveToHooked += MoveToHooked;
             _hotKeyHook.Start(_settings, mainModule.ModuleName);
 
+            SystemEvents.UserPreferenceChanged += SystemEventsUserPreferenceChanged;
+
             Hide();
         }
 
@@ -215,6 +224,7 @@ namespace SmartSystemMenu.Forms
 
         protected override void OnClosed(EventArgs e)
         {
+            SystemEvents.UserPreferenceChanged -= SystemEventsUserPreferenceChanged;
             _callWndProcHook?.Stop();
             _getMsgHook?.Stop();
             _shellHook?.Stop();
@@ -258,6 +268,28 @@ namespace SmartSystemMenu.Forms
             base.OnClosed(e);
             PostMessage((IntPtr)HWND_BROADCAST, WM_NULL, 0, 0);
             SendNotifyMessage((IntPtr)HWND_BROADCAST, WM_NULL, 0, 0);
+        }
+
+        private void SystemEventsUserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
+        {
+            if (_settings == null || _settings.ThemeMode != ThemeMode.System)
+            {
+                return;
+            }
+
+            if (!IsHandleCreated || IsDisposed)
+            {
+                return;
+            }
+
+            BeginInvoke((MethodInvoker)(() =>
+            {
+                ThemeUtils.ApplyTheme(this, _settings.ThemeMode);
+                ThemeUtils.ApplyThemeToOpenForms(_settings.ThemeMode);
+#if WIN32
+                _systemTrayMenu?.ApplyTheme();
+#endif
+            }));
         }
 
         protected override void WndProc(ref Message m)
@@ -523,6 +555,7 @@ namespace SmartSystemMenu.Forms
             {
                 _aboutForm = new AboutForm(_settings.Language);
             }
+            ThemeUtils.ApplyTheme(_aboutForm, _settings.ThemeMode);
             _aboutForm.Show();
             _aboutForm.Activate();
         }
@@ -630,13 +663,20 @@ namespace SmartSystemMenu.Forms
 
         private WindowTargetPickerForm CreateWindowTargetPicker(string title = null, string instruction = null, string dropHint = null)
         {
-            return new WindowTargetPickerForm(_settings.Language, IsInvalidTargetHandle, title, instruction, dropHint);
+            var picker = new WindowTargetPickerForm(_settings.Language, IsInvalidTargetHandle, title, instruction, dropHint);
+            ThemeUtils.ApplyTheme(picker, _settings.ThemeMode);
+            return picker;
         }
 
         private string GetWindowPickerText(string key, string fallback)
         {
             var value = _settings.Language.GetValue(key);
             return string.IsNullOrWhiteSpace(value) ? fallback : value;
+        }
+
+        private void ApplyThemeToForm(Form form)
+        {
+            ThemeUtils.ApplyTheme(form, _settings.ThemeMode);
         }
 
         private void MenuItemSettingsClick(object sender, EventArgs e)
@@ -648,11 +688,17 @@ namespace SmartSystemMenu.Forms
                 {
                     _settings = ea.Entity;
                     ApplyHiddenWindowRulesToAllWindows();
+                    ThemeUtils.ApplyTheme(this, _settings.ThemeMode);
+                    ThemeUtils.ApplyThemeToOpenForms(_settings.ThemeMode);
+#if WIN32
+                    _systemTrayMenu?.ApplyTheme();
+#endif
                 };
                 _settingsForm.HideByTargetClick += MenuItemHideByTargetClick;
                 _settingsForm.HideForAltTabByTargetClick += MenuItemHideForAltTabByTargetClick;
             }
 
+            ThemeUtils.ApplyTheme(_settingsForm, _settings.ThemeMode);
             _settingsForm.Show();
             _settingsForm.Activate();
         }
@@ -1080,6 +1126,7 @@ namespace SmartSystemMenu.Forms
                         case MenuItemId.SC_INFORMATION:
                             {
                                 var infoForm = new InformationForm(window.GetWindowInfo(), _settings.Language);
+                                ApplyThemeToForm(infoForm);
                                 infoForm.Show(window.Win32Window);
                             }
                             break;
@@ -1280,6 +1327,7 @@ namespace SmartSystemMenu.Forms
                         case MenuItemId.SC_SIZE_CUSTOM:
                             {
                                 var sizeForm = new SizeForm(window, _settings);
+                                ApplyThemeToForm(sizeForm);
                                 var result = sizeForm.ShowDialog(window.Win32Window);
                                 if (result == DialogResult.OK)
                                 {
@@ -1334,6 +1382,7 @@ namespace SmartSystemMenu.Forms
                         case MenuItemId.SC_TRANS_CUSTOM:
                             {
                                 var opacityForm = new TransparencyForm(window, _settings);
+                                ApplyThemeToForm(opacityForm);
                                 var result = opacityForm.ShowDialog(window.Win32Window);
                                 if (result == DialogResult.OK)
                                 {
@@ -1354,6 +1403,7 @@ namespace SmartSystemMenu.Forms
                         case MenuItemId.SC_ALIGN_CUSTOM:
                             {
                                 var positionForm = new PositionForm(window, _settings.Language);
+                                ApplyThemeToForm(positionForm);
                                 var result = positionForm.ShowDialog(window.Win32Window);
 
                                 if (result == DialogResult.OK)
@@ -1394,6 +1444,7 @@ namespace SmartSystemMenu.Forms
                         case MenuItemId.SC_CHANGE_TITLE:
                             {
                                 var titleForm = new TitleForm(_settings.Language);
+                                ApplyThemeToForm(titleForm);
                                 titleForm.Title = window.GetWindowText();
                                 var result = titleForm.ShowDialog(window.Win32Window);
 
@@ -1562,6 +1613,7 @@ namespace SmartSystemMenu.Forms
                                     }
 
                                     var parameterForm = new ParameterForm(parameterName, _settings.Language);
+                                    ApplyThemeToForm(parameterForm);
                                     var result = parameterForm.ShowDialog(window.Win32Window);
 
                                     if (result == DialogResult.OK)

@@ -29,6 +29,8 @@ namespace SmartSystemMenu.Settings
 
         public bool EnableHighDPI { get; set; }
 
+        public ThemeMode ThemeMode { get; set; }
+
         public string LanguageName { get; set; }
 
         public LanguageSettings Language { get; set; }
@@ -52,6 +54,7 @@ namespace SmartSystemMenu.Settings
             SaveSelectedItems = new SaveSelectedItemsSettings();
             ShowSystemTrayIcon = true;
             EnableHighDPI = false;
+            ThemeMode = ThemeMode.System;
             LanguageName = "";
             Language = new LanguageSettings();
             NextMonitor = new KeyboardShortcut();
@@ -108,6 +111,7 @@ namespace SmartSystemMenu.Settings
             settings.SaveSelectedItems = (SaveSelectedItemsSettings)SaveSelectedItems.Clone();
             settings.ShowSystemTrayIcon = ShowSystemTrayIcon;
             settings.EnableHighDPI = EnableHighDPI;
+            settings.ThemeMode = ThemeMode;
             settings.LanguageName = LanguageName;
             settings.NextMonitor = (KeyboardShortcut)NextMonitor.Clone();
             settings.PreviousMonitor = (KeyboardShortcut)PreviousMonitor.Clone();
@@ -335,6 +339,11 @@ namespace SmartSystemMenu.Settings
                 return false;
             }
 
+            if (ThemeMode != other.ThemeMode)
+            {
+                return false;
+            }
+
             if (RememberHiddenTargets != other.RememberHiddenTargets)
             {
                 return false;
@@ -415,6 +424,7 @@ namespace SmartSystemMenu.Settings
             hashCode ^= LanguageName.GetHashCode();
             hashCode ^= ShowSystemTrayIcon.GetHashCode();
             hashCode ^= EnableHighDPI.GetHashCode();
+            hashCode ^= ThemeMode.GetHashCode();
             hashCode ^= RememberHiddenTargets.GetHashCode();
             hashCode ^= NextMonitor.Key1.GetHashCode();
             hashCode ^= NextMonitor.Key2.GetHashCode();

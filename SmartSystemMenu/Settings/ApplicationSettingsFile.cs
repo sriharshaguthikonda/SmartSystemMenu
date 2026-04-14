@@ -162,6 +162,13 @@ namespace SmartSystemMenu.Settings
                 settings.EnableHighDPI = true;
             }
 
+            var themeElement = document.XPathSelectElement("/smartSystemMenu/theme");
+            if (themeElement != null && themeElement.Attribute("mode") != null)
+            {
+                var themeModeValue = themeElement.Attribute("mode").Value;
+                settings.ThemeMode = Enum.TryParse(themeModeValue, true, out ThemeMode parsedThemeMode) ? parsedThemeMode : ThemeMode.System;
+            }
+
             var cultureName = Thread.CurrentThread.CurrentUICulture.Name;
             var languageElement = document.XPathSelectElement("/smartSystemMenu/language");
             var languageName = languageElement != null && languageElement.Attribute("name") != null && !string.IsNullOrWhiteSpace(languageElement.Attribute("name").Value) ?
@@ -291,6 +298,9 @@ namespace SmartSystemMenu.Settings
                                  ),
                                  new XElement("display",
                                      new XAttribute("highDPI", settings.EnableHighDPI.ToString().ToLower())
+                                 ),
+                                 new XElement("theme",
+                                     new XAttribute("mode", settings.ThemeMode.ToString().ToLower())
                                  ),
                                  new XElement("language",
                                      new XAttribute("name", settings.LanguageName.ToLower())

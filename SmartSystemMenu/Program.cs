@@ -56,6 +56,7 @@ namespace SmartSystemMenu
                     Message = BuildHelpString(),
                     Text = "Help"
                 };
+                ThemeUtils.ApplyTheme(dialog, settings.ThemeMode);
                 dialog.ShowDialog();
                 return;
             }
@@ -404,6 +405,7 @@ namespace SmartSystemMenu
                 if (toggleParser.HasToggle("i") || toggleParser.HasToggle("information"))
                 {
                     var dialog = new InformationForm(window.GetWindowInfo(), settings.Language);
+                    ThemeUtils.ApplyTheme(dialog, settings.ThemeMode);
                     dialog.ShowDialog();
                 }
 

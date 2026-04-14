@@ -217,6 +217,7 @@
     <Compile Include="Settings\HiddenWindowAction.cs" />
     <Compile Include="Settings\HiddenWindowRule.cs" />
     <Compile Include="Settings\KeyboardShortcut.cs" />
+    <Compile Include="Settings\ThemeMode.cs" />
     <Compile Include="Settings\SaveSelectedItemsSettings.cs" />
     <Compile Include="Settings\SizerSettings.cs" />
     <Compile Include="Settings\WindowSettings.cs" />
@@ -225,6 +226,7 @@
     <Compile Include="UserType.cs" />
     <Compile Include="Utils\EnumUtils.cs" />
     <Compile Include="Utils\FileUtils.cs" />
+    <Compile Include="Utils\ThemeUtils.cs" />
     <Compile Include="Utils\WindowUtils.cs" />
     <Compile Include="WindowCloserType.cs" />
     <Compile Include="Settings\LanguageSettings.cs" />

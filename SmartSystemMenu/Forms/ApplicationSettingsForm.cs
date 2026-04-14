@@ -6,6 +6,7 @@ using System.Linq;
 using System.Drawing;
 using SmartSystemMenu.Settings;
 using SmartSystemMenu.Controls;
+using SmartSystemMenu.Utils;
 
 namespace SmartSystemMenu.Forms
 {
@@ -37,6 +38,7 @@ namespace SmartSystemMenu.Forms
                 _settings = settings;
                 _closerSettings = (CloserSettings)settings.Closer.Clone();
                 InitializeControls(settings);
+                ThemeUtils.ApplyTheme(this, _settings.ThemeMode);
             }
             catch
             {
@@ -201,6 +203,7 @@ namespace SmartSystemMenu.Forms
             grpbNextHotkeys.Text = settings.Language.GetValue("grpb_next_hotkeys");
             grpbPreviousHotkeys.Text = settings.Language.GetValue("grpb_previous_hotkeys");
             grpbDimmerTransparency.Text = settings.Language.GetValue("grpb_dimmer_transparency");
+            lblTheme.Text = GetLanguageText("lbl_theme_mode", "Theme");
             chkEnableHighDPI.Text = settings.Language.GetValue("chk_enable_high_dpi");
             clmProcessExclusionName.HeaderText = settings.Language.GetValue("clm_process_exclusion_name");
             clmProcessExclusionEdit.ToolTipText = settings.Language.GetValue("clm_process_exclusion_edit");
@@ -318,6 +321,17 @@ namespace SmartSystemMenu.Forms
             cmbSizer.Items.Add(settings.Language.GetValue("sizer_window_without_margins"));
             cmbSizer.Items.Add(settings.Language.GetValue("sizer_window_client_area"));
             cmbSizer.SelectedIndex = (int)settings.Sizer.SizerType;
+
+            cmbTheme.DisplayMember = "Text";
+            cmbTheme.ValueMember = "Value";
+            cmbTheme.DataSource = new[]
+            {
+                new { Text = GetLanguageText("theme_mode_system", "System"), Value = ThemeMode.System },
+                new { Text = GetLanguageText("theme_mode_light", "Light"), Value = ThemeMode.Light },
+                new { Text = GetLanguageText("theme_mode_dark", "Dark"), Value = ThemeMode.Dark }
+            };
+            cmbTheme.SelectedValue = settings.ThemeMode;
+
             chkEnableHighDPI.Checked = settings.EnableHighDPI;
             chkAeroGlass.Checked = settings.SaveSelectedItems.AeroGlass;
             chkAlwaysOnTop.Checked = settings.SaveSelectedItems.AlwaysOnTop;
@@ -350,6 +364,7 @@ namespace SmartSystemMenu.Forms
                 {
                     var cell = grid.Rows[e.RowIndex].Cells[0];
                     var dialog = new ProcessExclusionForm(cell.Value.ToString(), _settings.Language);
+                    ThemeUtils.ApplyTheme(dialog, _settings.ThemeMode);
                     if (dialog.ShowDialog(this) == DialogResult.OK)
                     {
                         cell.Value = dialog.ProcessName;
@@ -373,6 +388,7 @@ namespace SmartSystemMenu.Forms
                 if (e.ColumnIndex == 3 && !row.ReadOnly && row.Tag is StartProgramMenuItem menuItem)
                 {
                     var dialog = new StartProgramForm(menuItem, _settings.Language);
+                    ThemeUtils.ApplyTheme(dialog, _settings.ThemeMode);
                     if (dialog.ShowDialog(this) == DialogResult.OK)
                     {
                         row.Cells[0].Value = dialog.MenuItem.Title;
@@ -399,6 +415,7 @@ namespace SmartSystemMenu.Forms
                 if (e.ColumnIndex == 6 && !row.ReadOnly && grid.Rows[e.RowIndex].Tag is WindowSizeMenuItem menuItem)
                 {
                     var dialog = new SettingsSizeForm(_settings.Language, menuItem);
+                    ThemeUtils.ApplyTheme(dialog, _settings.ThemeMode);
                     if (dialog.ShowDialog(this) == DialogResult.OK)
                     {
                         row.Cells[0].Value = dialog.MenuItem.Title;
@@ -433,6 +450,7 @@ namespace SmartSystemMenu.Forms
             {
                 var cell = grid.Rows[e.RowIndex].Cells[e.ColumnIndex];
                 var dialog = new ProcessExclusionForm(cell.Value.ToString(), _settings.Language);
+                ThemeUtils.ApplyTheme(dialog, _settings.ThemeMode);
                 if (dialog.ShowDialog(this) == DialogResult.OK)
                 {
                     cell.Value = dialog.ProcessName;
@@ -484,6 +502,7 @@ namespace SmartSystemMenu.Forms
                 if (!row.ReadOnly)
                 {
                     var dialog = new StartProgramForm(menuItem, _settings.Language);
+                    ThemeUtils.ApplyTheme(dialog, _settings.ThemeMode);
                     if (dialog.ShowDialog(this) == DialogResult.OK)
                     {
                         row.Cells[0].Value = dialog.MenuItem.Title;
@@ -504,6 +523,7 @@ namespace SmartSystemMenu.Forms
                 if (!row.ReadOnly)
                 {
                     var dialog = new SettingsSizeForm(_settings.Language, menuItem);
+                    ThemeUtils.ApplyTheme(dialog, _settings.ThemeMode);
                     if (dialog.ShowDialog(this) == DialogResult.OK)
                     {
                         row.Cells[0].Value = dialog.MenuItem.Title;
@@ -529,6 +549,7 @@ namespace SmartSystemMenu.Forms
         private void ButtonAddProcessExclusionClick(object sender, EventArgs e)
         {
             var dialog = new ProcessExclusionForm("", _settings.Language);
+            ThemeUtils.ApplyTheme(dialog, _settings.ThemeMode);
             if (dialog.ShowDialog(this) == DialogResult.OK)
             {
                 var index = gvProcessExclusions.Rows.Add();
@@ -542,6 +563,7 @@ namespace SmartSystemMenu.Forms
         private void ButtonAddStartProgramClick(object sender, EventArgs e)
         {
             var dialog = new StartProgramForm(null, _settings.Language);
+            ThemeUtils.ApplyTheme(dialog, _settings.ThemeMode);
             if (dialog.ShowDialog(this) == DialogResult.OK)
             {
                 var index = gvStartProgram.Rows.Add();
@@ -558,6 +580,7 @@ namespace SmartSystemMenu.Forms
         private void ButtonAddWindowSizeClick(object sender, EventArgs e)
         {
             var dialog = new SettingsSizeForm(_settings.Language, new WindowSizeMenuItem { Width = 1, Height = 1 });
+            ThemeUtils.ApplyTheme(dialog, _settings.ThemeMode);
             if (dialog.ShowDialog(this) == DialogResult.OK)
             {
                 var index = gvWindowSize.Rows.Add();
@@ -609,6 +632,7 @@ namespace SmartSystemMenu.Forms
         private void ButtonWindowCloserClick(object sender, EventArgs e)
         {
             var dialog = new SettingsCloserForm(_settings.Language, _closerSettings.Key1, _closerSettings.Key2, _closerSettings.MouseButton, _closerSettings.Type);
+            ThemeUtils.ApplyTheme(dialog, _settings.ThemeMode);
             if (dialog.ShowDialog(this) == DialogResult.OK)
             {
                 _closerSettings.Key1 = dialog.Key1;
@@ -738,6 +762,7 @@ namespace SmartSystemMenu.Forms
         {
             var shortcut = txtNextHotkeys.Tag as KeyboardShortcut ?? _settings.NextMonitor;
             var form = new HotkeysForm(_settings.Language, shortcut);
+            ThemeUtils.ApplyTheme(form, _settings.ThemeMode);
             var result = form.ShowDialog(this);
             if (result == DialogResult.OK)
             {
@@ -750,6 +775,7 @@ namespace SmartSystemMenu.Forms
         {
             var shortcut = txtPreviousHotkeys.Tag as KeyboardShortcut ?? _settings.PreviousMonitor;
             var form = new HotkeysForm(_settings.Language, shortcut);
+            ThemeUtils.ApplyTheme(form, _settings.ThemeMode);
             var result = form.ShowDialog(this);
             if (result == DialogResult.OK)
             {
@@ -852,6 +878,7 @@ namespace SmartSystemMenu.Forms
             settings.Sizer.SizerType = (WindowSizerType)cmbSizer.SelectedIndex;
             settings.Sizer.ResizableByDefault = _settings.Sizer.ResizableByDefault;
             settings.EnableHighDPI = chkEnableHighDPI.Checked;
+            settings.ThemeMode = cmbTheme.SelectedValue is ThemeMode themeMode ? themeMode : ThemeMode.System;
             settings.LanguageName = cmbLanguage.SelectedValue == null ? "" : cmbLanguage.SelectedValue.ToString();
 
             if (txtNextHotkeys.Tag is KeyboardShortcut nextShortcut)
@@ -914,6 +941,7 @@ namespace SmartSystemMenu.Forms
         {
             var menuItem = (Settings.MenuItem)row.Tag;
             var form = new HotkeysForm(_settings.Language, menuItem.Shortcut);
+            ThemeUtils.ApplyTheme(form, _settings.ThemeMode);
             var result = form.ShowDialog(this);
             if (result == DialogResult.OK)
             {
