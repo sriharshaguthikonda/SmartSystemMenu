@@ -39,6 +39,33 @@ namespace SmartSystemMenu.Settings
                 .Select(x => x.Value.ToLower())
                 .ToList();
 
+            var hiddenWindowsElement = document.XPathSelectElement("/smartSystemMenu/hiddenWindows");
+            settings.RememberHiddenTargets = hiddenWindowsElement != null &&
+                hiddenWindowsElement.Attribute("remember") != null &&
+                hiddenWindowsElement.Attribute("remember").Value.ToLower() == "true";
+
+            settings.HiddenWindowRules = document
+                .XPathSelectElements("/smartSystemMenu/hiddenWindows/item")
+                .Select(x =>
+                {
+                    var processPath = x.Attribute("processPath") != null ? x.Attribute("processPath").Value : string.Empty;
+                    var className = x.Attribute("className") != null ? x.Attribute("className").Value : string.Empty;
+                    var title = x.Attribute("windowTitle") != null ? x.Attribute("windowTitle").Value : string.Empty;
+                    var enabled = x.Attribute("enabled") == null || string.IsNullOrEmpty(x.Attribute("enabled").Value) || x.Attribute("enabled").Value.ToLower() == "true";
+                    var actionString = x.Attribute("action") != null ? x.Attribute("action").Value : string.Empty;
+                    var action = Enum.TryParse(actionString, true, out HiddenWindowAction parsedAction) ? parsedAction : HiddenWindowAction.Hide;
+
+                    return new HiddenWindowRule
+                    {
+                        Enabled = enabled,
+                        Action = action,
+                        ProcessPath = processPath,
+                        ClassName = WindowUtils.NormalizeClassName(className),
+                        WindowTitle = title
+                    };
+                })
+                .ToList();
+
             settings.MenuItems.WindowSizeItems = document
                 .XPathSelectElements("/smartSystemMenu/menuItems/windowSizeItems/item")
                 .Select(x => new WindowSizeMenuItem
@@ -180,6 +207,14 @@ namespace SmartSystemMenu.Settings
                                  x.IgnoreHook ? new XAttribute("ignoreHook", x.IgnoreHook.ToString().ToLower()) : null, x.Name))),
                                  new XElement("createMenuOnInitEvent", settings.InitEventProcessNames.Select(x => new XElement("processName", x))),
                                  new XElement("noRestoreMenuOnExit", settings.NoRestoreMenuProcessNames.Select(x => new XElement("processName", x))),
+                                 new XElement("hiddenWindows",
+                                     new XAttribute("remember", settings.RememberHiddenTargets.ToString().ToLower()),
+                                     (settings.HiddenWindowRules ?? Enumerable.Empty<HiddenWindowRule>()).Select(x => new XElement("item",
+                                         new XAttribute("enabled", x.Enabled.ToString().ToLower()),
+                                         new XAttribute("action", x.Action.ToString()),
+                                         new XAttribute("processPath", x.ProcessPath ?? string.Empty),
+                                         new XAttribute("className", x.ClassName ?? string.Empty),
+                                         new XAttribute("windowTitle", x.WindowTitle ?? string.Empty)))),
                                  new XElement("menuItems",
                                      new XElement("items", settings.MenuItems.Items.Select(x => new XElement("item",
                                          new XAttribute("type", x.Type.ToString().ToLower()),

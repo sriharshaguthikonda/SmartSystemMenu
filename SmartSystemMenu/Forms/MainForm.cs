@@ -149,6 +149,8 @@ namespace SmartSystemMenu.Forms
                         window.ApplyState(states[0], _settings.SaveSelectedItems, _settings.MenuItems.WindowSizeItems);
                         window.Menu.CheckMenuItem(MenuItemId.SC_SAVE_SELECTED_ITEMS, true);
                     }
+
+                    ApplyHiddenWindowRules(window, processPath);
                 }
             }
 
@@ -490,7 +492,10 @@ namespace SmartSystemMenu.Forms
             var result = pickerForm.ShowDialog();
             if (result == DialogResult.OK)
             {
-                HideWindowByHandle(pickerForm.SelectedHandle);
+                if (HideWindowByHandle(pickerForm.SelectedHandle))
+                {
+                    RememberHiddenWindowRule(pickerForm.SelectedHandle, HiddenWindowAction.Hide);
+                }
             }
         }
 
@@ -505,7 +510,10 @@ namespace SmartSystemMenu.Forms
             var result = pickerForm.ShowDialog();
             if (result == DialogResult.OK)
             {
-                HideWindowForAltTabByHandle(pickerForm.SelectedHandle);
+                if (HideWindowForAltTabByHandle(pickerForm.SelectedHandle))
+                {
+                    RememberHiddenWindowRule(pickerForm.SelectedHandle, HiddenWindowAction.HideForAltTab);
+                }
             }
         }
 
@@ -557,23 +565,24 @@ namespace SmartSystemMenu.Forms
             return false;
         }
 
-        private void HideWindowByHandle(IntPtr handle)
+        private bool HideWindowByHandle(IntPtr handle)
         {
             var window = GetOrCreateTargetWindow(handle);
             if (window == null || window.IsHidden)
             {
-                return;
+                return false;
             }
 
             window.Hide();
+            return true;
         }
 
-        private void HideWindowForAltTabByHandle(IntPtr handle)
+        private bool HideWindowForAltTabByHandle(IntPtr handle)
         {
             var window = GetOrCreateTargetWindow(handle);
             if (window == null)
             {
-                return;
+                return false;
             }
 
             if (!window.IsExToolWindow)
@@ -581,6 +590,8 @@ namespace SmartSystemMenu.Forms
                 window.Menu.CheckMenuItem(MenuItemId.SC_HIDE_FOR_ALT_TAB, true);
                 window.HideForAltTab(true);
             }
+
+            return true;
         }
 
         private Window GetOrCreateTargetWindow(IntPtr handle)
@@ -633,7 +644,11 @@ namespace SmartSystemMenu.Forms
             if (_settingsForm == null || _settingsForm.IsDisposed || !_settingsForm.IsHandleCreated)
             {
                 _settingsForm = new ApplicationSettingsForm(_settings);
-                _settingsForm.OkClick += (object s, EventArgs<ApplicationSettings> ea) => { _settings = ea.Entity; };
+                _settingsForm.OkClick += (object s, EventArgs<ApplicationSettings> ea) =>
+                {
+                    _settings = ea.Entity;
+                    ApplyHiddenWindowRulesToAllWindows();
+                };
                 _settingsForm.HideByTargetClick += MenuItemHideByTargetClick;
                 _settingsForm.HideForAltTabByTargetClick += MenuItemHideForAltTabByTargetClick;
             }
@@ -794,7 +809,154 @@ namespace SmartSystemMenu.Forms
                         window.ApplyState(states[0], _settings.SaveSelectedItems, _settings.MenuItems.WindowSizeItems);
                         window.Menu.CheckMenuItem(MenuItemId.SC_SAVE_SELECTED_ITEMS, true);
                     }
+
+                    ApplyHiddenWindowRules(window, processPath);
                 }
+            }
+        }
+
+        private void ApplyHiddenWindowRulesToAllWindows()
+        {
+            if (_windows == null || _settings == null || !_settings.RememberHiddenTargets || _settings.HiddenWindowRules == null || _settings.HiddenWindowRules.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var window in _windows.Values)
+            {
+                ApplyHiddenWindowRules(window);
+            }
+        }
+
+        private void ApplyHiddenWindowRules(Window window, string processPath = null)
+        {
+            if (window == null || _settings == null || !_settings.RememberHiddenTargets || _settings.HiddenWindowRules == null || _settings.HiddenWindowRules.Count == 0)
+            {
+                return;
+            }
+
+            processPath = processPath ?? window.Process?.GetMainModuleFileName() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(processPath))
+            {
+                return;
+            }
+
+            var className = WindowUtils.NormalizeClassName(window.GetClassName());
+            var title = window.GetWindowText() ?? string.Empty;
+
+            foreach (var rule in _settings.HiddenWindowRules)
+            {
+                if (!IsHiddenWindowRuleMatch(rule, processPath, className, title))
+                {
+                    continue;
+                }
+
+                if (rule.Action == HiddenWindowAction.Hide)
+                {
+                    if (!window.IsHidden)
+                    {
+                        window.Hide();
+                    }
+                }
+                else if (rule.Action == HiddenWindowAction.HideForAltTab && !window.IsExToolWindow)
+                {
+                    window.Menu.CheckMenuItem(MenuItemId.SC_HIDE_FOR_ALT_TAB, true);
+                    window.HideForAltTab(true);
+                }
+            }
+        }
+
+        private bool IsHiddenWindowRuleMatch(HiddenWindowRule rule, string processPath, string className, string title)
+        {
+            if (rule == null || !rule.Enabled)
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(rule.ProcessPath) || string.IsNullOrWhiteSpace(processPath))
+            {
+                return false;
+            }
+
+            if (!string.Equals(rule.ProcessPath, processPath, StringComparison.CurrentCultureIgnoreCase))
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(rule.ClassName) && !string.Equals(rule.ClassName, className, StringComparison.CurrentCultureIgnoreCase))
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(rule.WindowTitle) && !string.Equals(rule.WindowTitle, title, StringComparison.CurrentCultureIgnoreCase))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private void RememberHiddenWindowRule(IntPtr handle, HiddenWindowAction action)
+        {
+            if (_settings == null || !_settings.RememberHiddenTargets)
+            {
+                return;
+            }
+
+            var normalizedHandle = WindowUtils.GetParentWindow(handle);
+            var window = GetOrCreateTargetWindow(normalizedHandle);
+            if (window == null)
+            {
+                return;
+            }
+
+            var processPath = window.Process?.GetMainModuleFileName() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(processPath))
+            {
+                return;
+            }
+
+            var rule = new HiddenWindowRule
+            {
+                Enabled = true,
+                Action = action,
+                ProcessPath = processPath,
+                ClassName = WindowUtils.NormalizeClassName(window.GetClassName()),
+                WindowTitle = window.GetWindowText() ?? string.Empty
+            };
+
+            var existingRule = _settings.HiddenWindowRules.FirstOrDefault(x =>
+                x.Action == rule.Action &&
+                string.Equals(x.ProcessPath, rule.ProcessPath, StringComparison.CurrentCultureIgnoreCase) &&
+                string.Equals(x.ClassName, rule.ClassName, StringComparison.CurrentCulture) &&
+                string.Equals(x.WindowTitle, rule.WindowTitle, StringComparison.CurrentCultureIgnoreCase));
+            if (existingRule != null)
+            {
+                existingRule.Enabled = true;
+            }
+            else
+            {
+                _settings.HiddenWindowRules.Add(rule);
+            }
+
+            SaveApplicationSettings();
+        }
+
+        private void SaveApplicationSettings()
+        {
+            if (_settings == null)
+            {
+                return;
+            }
+
+            try
+            {
+                var settingsFileName = Path.Combine(AssemblyUtils.AssemblyDirectory, "SmartSystemMenu.xml");
+                ApplicationSettingsFile.Save(settingsFileName, _settings);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Failed to save hidden target settings." + Environment.NewLine + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

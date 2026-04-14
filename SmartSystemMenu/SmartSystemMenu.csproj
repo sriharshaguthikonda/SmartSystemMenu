@@ -214,6 +214,8 @@
     <Compile Include="Settings\CloserSettings.cs" />
     <Compile Include="Settings\DimmerSettings.cs" />
     <Compile Include="Settings\ExcludedProcessItem.cs" />
+    <Compile Include="Settings\HiddenWindowAction.cs" />
+    <Compile Include="Settings\HiddenWindowRule.cs" />
     <Compile Include="Settings\KeyboardShortcut.cs" />
     <Compile Include="Settings\SaveSelectedItemsSettings.cs" />
     <Compile Include="Settings\SizerSettings.cs" />

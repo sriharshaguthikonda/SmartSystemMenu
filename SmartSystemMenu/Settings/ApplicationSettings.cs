@@ -11,6 +11,10 @@ namespace SmartSystemMenu.Settings
 
         public IList<string> NoRestoreMenuProcessNames { get; set; }
 
+        public IList<HiddenWindowRule> HiddenWindowRules { get; set; }
+
+        public bool RememberHiddenTargets { get; set; }
+
         public MenuItems MenuItems { get; set; }
 
         public CloserSettings Closer { get; set; }
@@ -39,6 +43,8 @@ namespace SmartSystemMenu.Settings
             ExcludedProcessItems = new List<ExcludedProcessItem>();
             InitEventProcessNames = new List<string>();
             NoRestoreMenuProcessNames = new List<string>();
+            HiddenWindowRules = new List<HiddenWindowRule>();
+            RememberHiddenTargets = false;
             MenuItems = new MenuItems();
             Closer = new CloserSettings();
             Dimmer = new DimmerSettings();
@@ -71,6 +77,11 @@ namespace SmartSystemMenu.Settings
                 settings.NoRestoreMenuProcessNames.Add(processName);
             }
 
+            foreach (var rule in HiddenWindowRules)
+            {
+                settings.HiddenWindowRules.Add((HiddenWindowRule)rule.Clone());
+            }
+
             foreach (var menuItem in MenuItems.WindowSizeItems)
             {
                 settings.MenuItems.WindowSizeItems.Add((WindowSizeMenuItem)menuItem.Clone());
@@ -100,6 +111,7 @@ namespace SmartSystemMenu.Settings
             settings.LanguageName = LanguageName;
             settings.NextMonitor = (KeyboardShortcut)NextMonitor.Clone();
             settings.PreviousMonitor = (KeyboardShortcut)PreviousMonitor.Clone();
+            settings.RememberHiddenTargets = RememberHiddenTargets;
             return settings;
         }
 
@@ -155,6 +167,11 @@ namespace SmartSystemMenu.Settings
                 return false;
             }
 
+            if (HiddenWindowRules.Count != other.HiddenWindowRules.Count)
+            {
+                return false;
+            }
+
             if (MenuItems.WindowSizeItems.Count != other.MenuItems.WindowSizeItems.Count)
             {
                 return false;
@@ -190,6 +207,20 @@ namespace SmartSystemMenu.Settings
             for (var i = 0; i < NoRestoreMenuProcessNames.Count; i++)
             {
                 if (string.Compare(NoRestoreMenuProcessNames[i], other.NoRestoreMenuProcessNames[i], StringComparison.CurrentCultureIgnoreCase) != 0)
+                {
+                    return false;
+                }
+            }
+
+            for (var i = 0; i < HiddenWindowRules.Count; i++)
+            {
+                var currentRule = HiddenWindowRules[i];
+                var otherRule = other.HiddenWindowRules[i];
+                if (currentRule.Enabled != otherRule.Enabled ||
+                    currentRule.Action != otherRule.Action ||
+                    string.Compare(currentRule.ProcessPath, otherRule.ProcessPath, StringComparison.CurrentCultureIgnoreCase) != 0 ||
+                    string.Compare(currentRule.ClassName, otherRule.ClassName, StringComparison.CurrentCultureIgnoreCase) != 0 ||
+                    string.Compare(currentRule.WindowTitle, otherRule.WindowTitle, StringComparison.CurrentCultureIgnoreCase) != 0)
                 {
                     return false;
                 }
@@ -304,6 +335,11 @@ namespace SmartSystemMenu.Settings
                 return false;
             }
 
+            if (RememberHiddenTargets != other.RememberHiddenTargets)
+            {
+                return false;
+            }
+
             if (string.Compare(LanguageName, other.LanguageName, StringComparison.CurrentCultureIgnoreCase) != 0)
             {
                 return false;
@@ -329,6 +365,15 @@ namespace SmartSystemMenu.Settings
             foreach (var processName in NoRestoreMenuProcessNames)
             {
                 hashCode ^= processName.GetHashCode();
+            }
+
+            foreach (var hiddenWindowRule in HiddenWindowRules)
+            {
+                hashCode ^= hiddenWindowRule.Enabled.GetHashCode();
+                hashCode ^= hiddenWindowRule.Action.GetHashCode();
+                hashCode ^= (hiddenWindowRule.ProcessPath ?? string.Empty).GetHashCode();
+                hashCode ^= (hiddenWindowRule.ClassName ?? string.Empty).GetHashCode();
+                hashCode ^= (hiddenWindowRule.WindowTitle ?? string.Empty).GetHashCode();
             }
 
             foreach (var item in MenuItems.WindowSizeItems)
@@ -370,6 +415,7 @@ namespace SmartSystemMenu.Settings
             hashCode ^= LanguageName.GetHashCode();
             hashCode ^= ShowSystemTrayIcon.GetHashCode();
             hashCode ^= EnableHighDPI.GetHashCode();
+            hashCode ^= RememberHiddenTargets.GetHashCode();
             hashCode ^= NextMonitor.Key1.GetHashCode();
             hashCode ^= NextMonitor.Key2.GetHashCode();
             hashCode ^= NextMonitor.Key3.GetHashCode();

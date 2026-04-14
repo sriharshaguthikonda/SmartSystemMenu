@@ -11,8 +11,17 @@ namespace SmartSystemMenu.Forms
 {
     public partial class ApplicationSettingsForm : Form
     {
+        private const int HiddenWindowEnabledColumnIndex = 0;
+        private const int HiddenWindowDeleteColumnIndex = 5;
+
         private readonly ApplicationSettings _settings;
         private readonly CloserSettings _closerSettings;
+        private TabPage _tabpHiddenWindows;
+        private GroupBox _grpbHiddenWindows;
+        private CheckBox _chkRememberHiddenTargets;
+        private DataGridView _gvHiddenWindows;
+        private Button _btnAddHiddenWindow;
+        private Button _btnAddHiddenAltTabWindow;
 
         public event EventHandler<EventArgs<ApplicationSettings>> OkClick;
         public event EventHandler HideByTargetClick;
@@ -21,6 +30,7 @@ namespace SmartSystemMenu.Forms
         public ApplicationSettingsForm(ApplicationSettings settings)
         {
             InitializeComponent();
+            InitializeHiddenWindowsControls();
 
             try
             {
@@ -36,9 +46,143 @@ namespace SmartSystemMenu.Forms
             }
         }
 
+        private void InitializeHiddenWindowsControls()
+        {
+            _tabpHiddenWindows = new TabPage
+            {
+                Name = "tabpHiddenWindows",
+                Margin = new Padding(4),
+                Padding = new Padding(4),
+                UseVisualStyleBackColor = true
+            };
+
+            _grpbHiddenWindows = new GroupBox
+            {
+                Name = "grpbHiddenWindows",
+                Location = new Point(11, 20),
+                Margin = new Padding(4),
+                Padding = new Padding(4),
+                Size = new Size(793, 453)
+            };
+
+            _chkRememberHiddenTargets = new CheckBox
+            {
+                Name = "chkRememberHiddenTargets",
+                AutoSize = true,
+                Location = new Point(8, 28),
+                Margin = new Padding(4)
+            };
+
+            _btnAddHiddenWindow = new Button
+            {
+                Name = "btnAddHiddenWindow",
+                Location = new Point(536, 24),
+                Margin = new Padding(4),
+                Size = new Size(120, 28),
+                UseVisualStyleBackColor = true
+            };
+            _btnAddHiddenWindow.Click += ButtonAddHiddenWindowClick;
+
+            _btnAddHiddenAltTabWindow = new Button
+            {
+                Name = "btnAddHiddenAltTabWindow",
+                Location = new Point(664, 24),
+                Margin = new Padding(4),
+                Size = new Size(121, 28),
+                UseVisualStyleBackColor = true
+            };
+            _btnAddHiddenAltTabWindow.Click += ButtonAddHiddenAltTabWindowClick;
+
+            _gvHiddenWindows = new DataGridView
+            {
+                Name = "gvHiddenWindows",
+                AllowUserToAddRows = false,
+                AllowUserToDeleteRows = false,
+                AllowUserToResizeColumns = false,
+                AllowUserToResizeRows = false,
+                BackgroundColor = SystemColors.ControlLightLight,
+                BorderStyle = BorderStyle.Fixed3D,
+                ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single,
+                ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize,
+                EditMode = DataGridViewEditMode.EditProgrammatically,
+                GridColor = SystemColors.Control,
+                Location = new Point(8, 61),
+                Margin = new Padding(4),
+                MultiSelect = false,
+                RowHeadersVisible = false,
+                RowHeadersWidth = 51,
+                ScrollBars = ScrollBars.Vertical,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                Size = new Size(777, 384)
+            };
+            _gvHiddenWindows.CellContentClick += GridViewHiddenWindowsCellContentClick;
+
+            var clmEnabled = new DataGridViewCheckBoxColumn
+            {
+                Name = "clmHiddenWindowEnabled",
+                HeaderText = string.Empty,
+                MinimumWidth = 6,
+                Width = 30,
+                Resizable = DataGridViewTriState.False
+            };
+            var clmAction = new DataGridViewTextBoxColumn
+            {
+                Name = "clmHiddenWindowAction",
+                HeaderText = "Action",
+                MinimumWidth = 6,
+                ReadOnly = true,
+                Width = 135
+            };
+            var clmWindowTitle = new DataGridViewTextBoxColumn
+            {
+                Name = "clmHiddenWindowTitle",
+                HeaderText = "Window",
+                MinimumWidth = 6,
+                ReadOnly = true,
+                Width = 180
+            };
+            var clmProcess = new DataGridViewTextBoxColumn
+            {
+                Name = "clmHiddenWindowProcess",
+                HeaderText = "Process",
+                MinimumWidth = 6,
+                ReadOnly = true,
+                AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
+            };
+            var clmClass = new DataGridViewTextBoxColumn
+            {
+                Name = "clmHiddenWindowClass",
+                HeaderText = "Class",
+                MinimumWidth = 6,
+                ReadOnly = true,
+                Width = 135
+            };
+            var clmDelete = new DataGridViewButtonColumn
+            {
+                Name = "clmHiddenWindowDelete",
+                HeaderText = string.Empty,
+                MinimumWidth = 6,
+                Width = 30,
+                Resizable = DataGridViewTriState.False,
+                UseColumnTextForButtonValue = true,
+                Text = "-"
+            };
+
+            _gvHiddenWindows.Columns.AddRange(clmEnabled, clmAction, clmWindowTitle, clmProcess, clmClass, clmDelete);
+
+            _grpbHiddenWindows.Controls.Add(_chkRememberHiddenTargets);
+            _grpbHiddenWindows.Controls.Add(_btnAddHiddenWindow);
+            _grpbHiddenWindows.Controls.Add(_btnAddHiddenAltTabWindow);
+            _grpbHiddenWindows.Controls.Add(_gvHiddenWindows);
+            _tabpHiddenWindows.Controls.Add(_grpbHiddenWindows);
+
+            tabMain.TabPages.Insert(1, _tabpHiddenWindows);
+        }
+
         private void InitializeControls(ApplicationSettings settings)
         {
             tabpGeneral.Text = settings.Language.GetValue("tab_settings_general");
+            _tabpHiddenWindows.Text = GetLanguageText("tab_settings_hidden_windows", "Hidden Windows");
             tabpMenuStart.Text = settings.Language.GetValue("tab_settings_menu_start");
             tabpMenuSize.Text = settings.Language.GetValue("tab_settings_menu_size");
             tabpMenuMoveTo.Text = settings.Language.GetValue("tab_settings_menu_move_to");
@@ -46,6 +190,7 @@ namespace SmartSystemMenu.Forms
             tabpMenu.Text = settings.Language.GetValue("tab_settings_menu");
             tabpMenuSaveSelectedItems.Text = settings.Language.GetValue("tab_settings_menu_save");
             grpbLanguage.Text = settings.Language.GetValue("grpb_language");
+            _grpbHiddenWindows.Text = GetLanguageText("grpb_hidden_windows", "Remembered Hidden Targets");
             grpbProcessExclusions.Text = settings.Language.GetValue("grpb_process_exclusions");
             grpbStartProgram.Text = settings.Language.GetValue("grpb_start_program");
             grpbWindowSize.Text = settings.Language.GetValue("grpb_window_size");
@@ -74,6 +219,10 @@ namespace SmartSystemMenu.Forms
             clmWindowSizeDelete.ToolTipText = settings.Language.GetValue("clm_window_size_delete");
             clmnMenuItemName.HeaderText = settings.Language.GetValue("clm_hotkeys_name");
             clmnHotkeys.HeaderText = settings.Language.GetValue("clm_hotkeys_keys");
+            _gvHiddenWindows.Columns[1].HeaderText = GetLanguageText("clm_hidden_window_action", "Action");
+            _gvHiddenWindows.Columns[2].HeaderText = GetLanguageText("clm_hidden_window_title", "Window");
+            _gvHiddenWindows.Columns[3].HeaderText = GetLanguageText("clm_hidden_window_process", "Process");
+            _gvHiddenWindows.Columns[4].HeaderText = GetLanguageText("clm_hidden_window_class", "Class");
             toolTipAddProcessName.SetToolTip(btnProcessExclusionDown, settings.Language.GetValue("btn_process_exclusion_down"));
             toolTipAddProcessName.SetToolTip(btnProcessExclusionUp, settings.Language.GetValue("btn_process_exclusion_up"));
             toolTipAddProcessName.SetToolTip(btnAddProcessExclusion, settings.Language.GetValue("btn_add_process_exclusion"));
@@ -104,6 +253,9 @@ namespace SmartSystemMenu.Forms
             hideForAltTabText = string.IsNullOrWhiteSpace(hideForAltTabText) ? "Hide For Alt+Tab" : hideForAltTabText;
             var hideForAltTabByTargetText = settings.Language.GetValue("mi_hide_for_alt_tab_by_target");
             btnHideAltTabByTarget.Text = string.IsNullOrWhiteSpace(hideForAltTabByTargetText) ? hideForAltTabText + "..." : hideForAltTabByTargetText;
+            _btnAddHiddenWindow.Text = btnHideWindowByTarget.Text;
+            _btnAddHiddenAltTabWindow.Text = btnHideAltTabByTarget.Text;
+            _chkRememberHiddenTargets.Text = GetLanguageText("chk_remember_hidden_targets", "Remember hidden targets and auto-apply on startup");
             btnApply.Text = settings.Language.GetValue("settings_btn_apply");
             btnCancel.Text = settings.Language.GetValue("settings_btn_cancel");
             Text = settings.Language.GetValue("settings_form");
@@ -116,6 +268,11 @@ namespace SmartSystemMenu.Forms
             btnHideWindowByTarget.Visible = hideAny;
             btnHideAltTabByTarget.Enabled = hideForAltTabAny;
             btnHideAltTabByTarget.Visible = hideForAltTabAny;
+            _btnAddHiddenWindow.Enabled = hideAny;
+            _btnAddHiddenWindow.Visible = hideAny;
+            _btnAddHiddenAltTabWindow.Enabled = hideForAltTabAny;
+            _btnAddHiddenAltTabWindow.Visible = hideForAltTabAny;
+            _chkRememberHiddenTargets.Checked = settings.RememberHiddenTargets;
 
             txtNextHotkeys.Text = _settings.NextMonitor.ToString();
             txtNextHotkeys.Tag = _settings.NextMonitor;
@@ -180,6 +337,7 @@ namespace SmartSystemMenu.Forms
             FillGridViewByItems(gvHotkeys, items, settings.Language);
             FillGridViewByWindowSizeItems(gvWindowSize, settings.MenuItems.WindowSizeItems);
             FillGridViewByStartProgramItems(gvStartProgram, settings.MenuItems.StartProgramItems);
+            FillGridViewByHiddenWindowRules(_gvHiddenWindows, settings.HiddenWindowRules);
         }
 
         private void GridViewProcessExclusionsCellContentClick(object sender, DataGridViewCellEventArgs e)
@@ -464,12 +622,53 @@ namespace SmartSystemMenu.Forms
         {
             var handler = HideByTargetClick;
             handler?.Invoke(this, EventArgs.Empty);
+            RefreshHiddenWindowRulesGrid();
         }
 
         private void ButtonHideAltTabByTargetClick(object sender, EventArgs e)
         {
             var handler = HideForAltTabByTargetClick;
             handler?.Invoke(this, EventArgs.Empty);
+            RefreshHiddenWindowRulesGrid();
+        }
+
+        private void ButtonAddHiddenWindowClick(object sender, EventArgs e)
+        {
+            ButtonHideWindowByTargetClick(sender, e);
+        }
+
+        private void ButtonAddHiddenAltTabWindowClick(object sender, EventArgs e)
+        {
+            ButtonHideAltTabByTargetClick(sender, e);
+        }
+
+        private void GridViewHiddenWindowsCellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0)
+            {
+                return;
+            }
+
+            var row = _gvHiddenWindows.Rows[e.RowIndex];
+            if (!(row.Tag is HiddenWindowRule rule))
+            {
+                return;
+            }
+
+            if (e.ColumnIndex == HiddenWindowEnabledColumnIndex)
+            {
+                var value = row.Cells[HiddenWindowEnabledColumnIndex].Value is bool checkedValue && checkedValue;
+                value = !value;
+                row.Cells[HiddenWindowEnabledColumnIndex].Value = value;
+                rule.Enabled = value;
+                row.Tag = rule;
+                return;
+            }
+
+            if (e.ColumnIndex == HiddenWindowDeleteColumnIndex)
+            {
+                _gvHiddenWindows.Rows.RemoveAt(e.RowIndex);
+            }
         }
 
         private void ButtonMenuItemUpClick(object sender, EventArgs e)
@@ -625,11 +824,20 @@ namespace SmartSystemMenu.Forms
                 settings.NoRestoreMenuProcessNames.Add(processName);
             }
 
+            foreach (DataGridViewRow row in _gvHiddenWindows.Rows)
+            {
+                if (row.Tag is HiddenWindowRule hiddenWindowRule)
+                {
+                    settings.HiddenWindowRules.Add((HiddenWindowRule)hiddenWindowRule.Clone());
+                }
+            }
+
             settings.MenuItems.Items = (IList<Settings.MenuItem>)gvHotkeys.Tag;
             settings.Closer.Key1 = _closerSettings.Key1;
             settings.Closer.Key2 = _closerSettings.Key2;
             settings.Closer.MouseButton = _closerSettings.MouseButton;
             settings.Closer.Type = _closerSettings.Type;
+            settings.RememberHiddenTargets = _chkRememberHiddenTargets.Checked;
             settings.SaveSelectedItems.AeroGlass = chkAeroGlass.Checked;
             settings.SaveSelectedItems.AlwaysOnTop = chkAlwaysOnTop.Checked;
             settings.SaveSelectedItems.HideForAltTab = chkHideForAltTab.Checked;
@@ -859,6 +1067,52 @@ namespace SmartSystemMenu.Forms
                     ((DataGridViewDisableButtonCell)row.Cells[3]).Enabled = false;
                 }
             }
+        }
+
+        private void FillGridViewByHiddenWindowRules(DataGridView gridView, IList<HiddenWindowRule> rules)
+        {
+            if (gridView == null)
+            {
+                return;
+            }
+
+            gridView.Rows.Clear();
+            if (rules == null)
+            {
+                return;
+            }
+
+            foreach (var rule in rules)
+            {
+                var cloneRule = (HiddenWindowRule)rule.Clone();
+                var index = gridView.Rows.Add();
+                var row = gridView.Rows[index];
+                row.Tag = cloneRule;
+                row.Cells[HiddenWindowEnabledColumnIndex].Value = cloneRule.Enabled;
+                row.Cells[1].Value = GetHiddenWindowActionTitle(cloneRule.Action);
+                row.Cells[2].Value = string.IsNullOrWhiteSpace(cloneRule.WindowTitle) ? "<No title>" : cloneRule.WindowTitle;
+                row.Cells[3].Value = cloneRule.ProcessPath;
+                row.Cells[4].Value = cloneRule.ClassName;
+                row.Cells[5].ToolTipText = GetLanguageText("clm_hidden_window_delete", "Delete hidden rule");
+            }
+        }
+
+        private void RefreshHiddenWindowRulesGrid()
+        {
+            FillGridViewByHiddenWindowRules(_gvHiddenWindows, _settings.HiddenWindowRules);
+        }
+
+        private string GetHiddenWindowActionTitle(HiddenWindowAction action)
+        {
+            return action == HiddenWindowAction.HideForAltTab ?
+                GetLanguageText("hidden_window_action_hide_for_alt_tab", "Hide For Alt+Tab") :
+                GetLanguageText("hidden_window_action_hide", "Hide");
+        }
+
+        private string GetLanguageText(string key, string fallback)
+        {
+            var value = _settings?.Language?.GetValue(key);
+            return string.IsNullOrWhiteSpace(value) ? fallback : value;
         }
 
         private string GetTransparencyTitle(int id, LanguageSettings languageSettings) => id switch
