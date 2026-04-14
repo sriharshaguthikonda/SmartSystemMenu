@@ -93,6 +93,7 @@ namespace SmartSystemMenu.Forms
                 _systemTrayMenu = new SystemTrayMenu(_settings);
                 _systemTrayMenu.MenuItemAutoStartClick += MenuItemAutoStartClick;
                 _systemTrayMenu.MenuItemHideByTargetClick += MenuItemHideByTargetClick;
+                _systemTrayMenu.MenuItemHideForAltTabByTargetClick += MenuItemHideForAltTabByTargetClick;
                 _systemTrayMenu.MenuItemSettingsClick += MenuItemSettingsClick;
                 _systemTrayMenu.MenuItemAboutClick += MenuItemAboutClick;
                 _systemTrayMenu.MenuItemExitClick += MenuItemExitClick;
@@ -485,11 +486,26 @@ namespace SmartSystemMenu.Forms
 
         private void MenuItemHideByTargetClick(object sender, EventArgs e)
         {
-            using var pickerForm = new WindowTargetPickerForm(_settings.Language, IsInvalidTargetHandle);
+            using var pickerForm = CreateWindowTargetPicker();
             var result = pickerForm.ShowDialog();
             if (result == DialogResult.OK)
             {
                 HideWindowByHandle(pickerForm.SelectedHandle);
+            }
+        }
+
+        private void MenuItemHideForAltTabByTargetClick(object sender, EventArgs e)
+        {
+            var hideForAltTabText = GetWindowPickerText("hide_for_alt_tab", "Hide For Alt+Tab");
+            var title = GetWindowPickerText("mi_hide_for_alt_tab_by_target", hideForAltTabText + "...");
+            var instruction = GetWindowPickerText("window_picker_instruction_hide_for_alt_tab", "Drag the target symbol onto a window to hide it from Alt+Tab while keeping it visible on the desktop.");
+            var dropHint = GetWindowPickerText("window_picker_drop_hint_hide_for_alt_tab", "Drop on a window to hide it from Alt+Tab.");
+
+            using var pickerForm = CreateWindowTargetPicker(title, instruction, dropHint);
+            var result = pickerForm.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                HideWindowForAltTabByHandle(pickerForm.SelectedHandle);
             }
         }
 
@@ -543,40 +559,73 @@ namespace SmartSystemMenu.Forms
 
         private void HideWindowByHandle(IntPtr handle)
         {
-            if (_windows == null || handle == IntPtr.Zero)
+            var window = GetOrCreateTargetWindow(handle);
+            if (window == null || window.IsHidden)
             {
                 return;
+            }
+
+            window.Hide();
+        }
+
+        private void HideWindowForAltTabByHandle(IntPtr handle)
+        {
+            var window = GetOrCreateTargetWindow(handle);
+            if (window == null)
+            {
+                return;
+            }
+
+            if (!window.IsExToolWindow)
+            {
+                window.Menu.CheckMenuItem(MenuItemId.SC_HIDE_FOR_ALT_TAB, true);
+                window.HideForAltTab(true);
+            }
+        }
+
+        private Window GetOrCreateTargetWindow(IntPtr handle)
+        {
+            if (_windows == null || handle == IntPtr.Zero)
+            {
+                return null;
             }
 
             handle = WindowUtils.GetParentWindow(handle);
             if (IsInvalidTargetHandle(handle))
             {
-                return;
+                return null;
             }
 
             var window = _windows.TryGetValue(handle, out var existingWindow) ? existingWindow : null;
-            if (window == null)
+            if (window != null)
             {
-                GetWindowThreadProcessId(handle, out int processId);
-                var process = SystemUtils.GetProcessByIdSafely(processId);
-                var processPath = process?.GetMainModuleFileName() ?? string.Empty;
-
-                window = new Window(handle, _settings.MenuItems, _settings.Language);
-                CreateMenu(window, processId, processPath);
-                if (!_windows.TryGetValue(handle, out var trackedWindow))
-                {
-                    _windows[handle] = window;
-                }
-                else
-                {
-                    window = trackedWindow;
-                }
+                return window;
             }
 
-            if (!window.IsHidden)
+            GetWindowThreadProcessId(handle, out int processId);
+            var process = SystemUtils.GetProcessByIdSafely(processId);
+            var processPath = process?.GetMainModuleFileName() ?? string.Empty;
+
+            window = new Window(handle, _settings.MenuItems, _settings.Language);
+            CreateMenu(window, processId, processPath);
+            if (!_windows.TryGetValue(handle, out var trackedWindow))
             {
-                window.Hide();
+                _windows[handle] = window;
+                return window;
             }
+
+            return trackedWindow;
+        }
+
+        private WindowTargetPickerForm CreateWindowTargetPicker(string title = null, string instruction = null, string dropHint = null)
+        {
+            return new WindowTargetPickerForm(_settings.Language, IsInvalidTargetHandle, title, instruction, dropHint);
+        }
+
+        private string GetWindowPickerText(string key, string fallback)
+        {
+            var value = _settings.Language.GetValue(key);
+            return string.IsNullOrWhiteSpace(value) ? fallback : value;
         }
 
         private void MenuItemSettingsClick(object sender, EventArgs e)
@@ -586,6 +635,7 @@ namespace SmartSystemMenu.Forms
                 _settingsForm = new ApplicationSettingsForm(_settings);
                 _settingsForm.OkClick += (object s, EventArgs<ApplicationSettings> ea) => { _settings = ea.Entity; };
                 _settingsForm.HideByTargetClick += MenuItemHideByTargetClick;
+                _settingsForm.HideForAltTabByTargetClick += MenuItemHideForAltTabByTargetClick;
             }
 
             _settingsForm.Show();

@@ -39,6 +39,7 @@ namespace SmartSystemMenu.Forms
             this.grpbCloser = new System.Windows.Forms.GroupBox();
             this.btnCloser = new System.Windows.Forms.Button();
             this.btnHideWindowByTarget = new System.Windows.Forms.Button();
+            this.btnHideAltTabByTarget = new System.Windows.Forms.Button();
             this.grpbLanguage = new System.Windows.Forms.GroupBox();
             this.cmbLanguage = new System.Windows.Forms.ComboBox();
             this.grpbProcessExclusions = new System.Windows.Forms.GroupBox();
@@ -197,6 +198,7 @@ namespace SmartSystemMenu.Forms
             // 
             // grpbCloser
             // 
+            this.grpbCloser.Controls.Add(this.btnHideAltTabByTarget);
             this.grpbCloser.Controls.Add(this.btnHideWindowByTarget);
             this.grpbCloser.Controls.Add(this.btnCloser);
             this.grpbCloser.Location = new System.Drawing.Point(11, 107);
@@ -212,20 +214,30 @@ namespace SmartSystemMenu.Forms
             this.btnCloser.Location = new System.Drawing.Point(8, 32);
             this.btnCloser.Margin = new System.Windows.Forms.Padding(4);
             this.btnCloser.Name = "btnCloser";
-            this.btnCloser.Size = new System.Drawing.Size(221, 28);
+            this.btnCloser.Size = new System.Drawing.Size(128, 28);
             this.btnCloser.TabIndex = 0;
             this.btnCloser.UseVisualStyleBackColor = true;
             this.btnCloser.Click += new System.EventHandler(this.ButtonWindowCloserClick);
             // 
             // btnHideWindowByTarget
             // 
-            this.btnHideWindowByTarget.Location = new System.Drawing.Point(236, 32);
+            this.btnHideWindowByTarget.Location = new System.Drawing.Point(140, 32);
             this.btnHideWindowByTarget.Margin = new System.Windows.Forms.Padding(4);
             this.btnHideWindowByTarget.Name = "btnHideWindowByTarget";
-            this.btnHideWindowByTarget.Size = new System.Drawing.Size(149, 28);
+            this.btnHideWindowByTarget.Size = new System.Drawing.Size(120, 28);
             this.btnHideWindowByTarget.TabIndex = 1;
             this.btnHideWindowByTarget.UseVisualStyleBackColor = true;
             this.btnHideWindowByTarget.Click += new System.EventHandler(this.ButtonHideWindowByTargetClick);
+            //
+            // btnHideAltTabByTarget
+            //
+            this.btnHideAltTabByTarget.Location = new System.Drawing.Point(268, 32);
+            this.btnHideAltTabByTarget.Margin = new System.Windows.Forms.Padding(4);
+            this.btnHideAltTabByTarget.Name = "btnHideAltTabByTarget";
+            this.btnHideAltTabByTarget.Size = new System.Drawing.Size(117, 28);
+            this.btnHideAltTabByTarget.TabIndex = 2;
+            this.btnHideAltTabByTarget.UseVisualStyleBackColor = true;
+            this.btnHideAltTabByTarget.Click += new System.EventHandler(this.ButtonHideAltTabByTargetClick);
             // 
             // grpbLanguage
             // 
@@ -1179,6 +1191,7 @@ namespace SmartSystemMenu.Forms
         private System.Windows.Forms.GroupBox grpbCloser;
         private System.Windows.Forms.Button btnCloser;
         private System.Windows.Forms.Button btnHideWindowByTarget;
+        private System.Windows.Forms.Button btnHideAltTabByTarget;
         private System.Windows.Forms.GroupBox grpbLanguage;
         private System.Windows.Forms.GroupBox grpbSizer;
         private System.Windows.Forms.ComboBox cmbSizer;

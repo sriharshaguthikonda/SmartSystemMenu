@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
@@ -13,6 +14,7 @@ namespace SmartSystemMenu
         private readonly ContextMenuStrip _systemTrayMenu;
         private readonly ToolStripMenuItem _menuItemAutoStart;
         private readonly ToolStripMenuItem _menuItemHideByTarget;
+        private readonly ToolStripMenuItem _menuItemHideForAltTabByTarget;
         private readonly ToolStripMenuItem _menuItemRestore;
         private readonly ToolStripMenuItem _menuItemSettings;
         private readonly ToolStripMenuItem _menuItemAbout;
@@ -25,6 +27,7 @@ namespace SmartSystemMenu
 
         public event EventHandler MenuItemAutoStartClick;
         public event EventHandler MenuItemHideByTargetClick;
+        public event EventHandler MenuItemHideForAltTabByTargetClick;
         public event EventHandler MenuItemSettingsClick;
         public event EventHandler MenuItemAboutClick;
         public event EventHandler MenuItemExitClick;
@@ -34,6 +37,7 @@ namespace SmartSystemMenu
         {
             _menuItemAutoStart = new ToolStripMenuItem();
             _menuItemHideByTarget = new ToolStripMenuItem();
+            _menuItemHideForAltTabByTarget = new ToolStripMenuItem();
             _menuItemRestore = new ToolStripMenuItem();
             _menuItemSettings = new ToolStripMenuItem();
             _menuItemAbout = new ToolStripMenuItem();
@@ -81,18 +85,41 @@ namespace SmartSystemMenu
                 _menuItemExit.Click += ItemExitClick;
 
                 var hideItemName = MenuItemId.GetName(MenuItemId.SC_HIDE);
+                var hideForAltTabItemName = MenuItemId.GetName(MenuItemId.SC_HIDE_FOR_ALT_TAB);
                 var clickThroughItemName = MenuItemId.GetName(MenuItemId.SC_CLICK_THROUGH);
                 var transparencyItemName = MenuItemId.GetName(MenuItemId.SC_TRANS);
                 var dimmerItemName = MenuItemId.GetName(MenuItemId.SC_DIMMER);
                 var menuItems = _settings.MenuItems.Items.Flatten(x => x.Items);
                 var hideAny = menuItems.Any(x => x.Type == MenuItemType.Item && x.Name == hideItemName && x.Show);
+                var hideForAltTabAny = menuItems.Any(x => x.Type == MenuItemType.Item && x.Name == hideForAltTabItemName && x.Show);
                 var clickThroughAny = menuItems.Any(x => x.Type == MenuItemType.Item && x.Name == clickThroughItemName && x.Show);
                 var transparencyAny = menuItems.Any(x => x.Type == MenuItemType.Group && x.Name == transparencyItemName && x.Show);
                 var dimmerAny = menuItems.Any(x => x.Type == MenuItemType.Group && x.Name == dimmerItemName && x.Show);
                 var hideByTargetText = _settings.Language.GetValue("mi_hide_by_target");
                 hideByTargetText = string.IsNullOrWhiteSpace(hideByTargetText) ? _settings.Language.GetValue("hide") + "..." : hideByTargetText;
+                var hideForAltTabText = _settings.Language.GetValue("hide_for_alt_tab");
+                hideForAltTabText = string.IsNullOrWhiteSpace(hideForAltTabText) ? "Hide For Alt+Tab" : hideForAltTabText;
+                var hideForAltTabByTargetText = _settings.Language.GetValue("mi_hide_for_alt_tab_by_target");
+                hideForAltTabByTargetText = string.IsNullOrWhiteSpace(hideForAltTabByTargetText) ? hideForAltTabText + "..." : hideForAltTabByTargetText;
 
-                if (hideAny || clickThroughAny || transparencyAny || dimmerAny)
+                if (hideAny)
+                {
+                    _menuItemHideByTarget.Name = "miHideByTarget";
+                    _menuItemHideByTarget.Size = new Size(175, 22);
+                    _menuItemHideByTarget.Text = hideByTargetText;
+                    _menuItemHideByTarget.Click += ItemHideByTargetClick;
+                }
+
+                if (hideForAltTabAny)
+                {
+                    _menuItemHideForAltTabByTarget.Name = "miHideForAltTabByTarget";
+                    _menuItemHideForAltTabByTarget.Size = new Size(175, 22);
+                    _menuItemHideForAltTabByTarget.Text = hideForAltTabByTargetText;
+                    _menuItemHideForAltTabByTarget.Click += ItemHideForAltTabByTargetClick;
+                }
+
+                var restoreAny = hideAny || clickThroughAny || transparencyAny || dimmerAny;
+                if (restoreAny)
                 {
                     _menuItemRestore.Name = "miRestore";
                     _menuItemRestore.Size = new Size(175, 22);
@@ -100,11 +127,6 @@ namespace SmartSystemMenu
 
                     if (hideAny)
                     {
-                        _menuItemHideByTarget.Name = "miHideByTarget";
-                        _menuItemHideByTarget.Size = new Size(175, 22);
-                        _menuItemHideByTarget.Text = hideByTargetText;
-                        _menuItemHideByTarget.Click += ItemHideByTargetClick;
-
                         var subMenuItem = new ToolStripMenuItem();
                         subMenuItem.Name = "miHide";
                         subMenuItem.Size = new Size(175, 22);
@@ -142,20 +164,26 @@ namespace SmartSystemMenu
                         subMenuItem.Click += ItemRestoreClick;
                         _menuItemRestore.DropDownItems.Add(subMenuItem);
                     }
+                }
 
-                    if (hideAny)
-                    {
-                        _systemTrayMenu.Items.AddRange(new ToolStripItem[] { _menuItemAutoStart, _menuItemSeparator1, _menuItemHideByTarget, _menuItemRestore, _menuItemSettings, _menuItemAbout, _menuItemSeparator2, _menuItemExit });
-                    }
-                    else
-                    {
-                        _systemTrayMenu.Items.AddRange(new ToolStripItem[] { _menuItemAutoStart, _menuItemSeparator1, _menuItemRestore, _menuItemSettings, _menuItemAbout, _menuItemSeparator2, _menuItemExit });
-                    }
-                }
-                else
+                var trayItems = new List<ToolStripItem> { _menuItemAutoStart, _menuItemSeparator1 };
+                if (hideAny)
                 {
-                    _systemTrayMenu.Items.AddRange(new ToolStripItem[] { _menuItemAutoStart, _menuItemSeparator1, _menuItemSettings, _menuItemAbout, _menuItemSeparator2, _menuItemExit });
+                    trayItems.Add(_menuItemHideByTarget);
                 }
+                if (hideForAltTabAny)
+                {
+                    trayItems.Add(_menuItemHideForAltTabByTarget);
+                }
+                if (restoreAny)
+                {
+                    trayItems.Add(_menuItemRestore);
+                }
+                trayItems.Add(_menuItemSettings);
+                trayItems.Add(_menuItemAbout);
+                trayItems.Add(_menuItemSeparator2);
+                trayItems.Add(_menuItemExit);
+                _systemTrayMenu.Items.AddRange(trayItems.ToArray());
 
                 _systemTrayMenu.Name = "systemTrayMenu";
                 _systemTrayMenu.Size = new Size(176, 80);
@@ -187,6 +215,7 @@ namespace SmartSystemMenu
             {
                 _menuItemAutoStart?.Dispose();
                 _menuItemHideByTarget?.Dispose();
+                _menuItemHideForAltTabByTarget?.Dispose();
                 _menuItemRestore?.Dispose();
                 _menuItemSettings?.Dispose();
                 _menuItemAbout?.Dispose();
@@ -223,6 +252,12 @@ namespace SmartSystemMenu
         private void ItemHideByTargetClick(object sender, EventArgs e)
         {
             var handler = MenuItemHideByTargetClick;
+            handler?.Invoke(sender, e);
+        }
+
+        private void ItemHideForAltTabByTargetClick(object sender, EventArgs e)
+        {
+            var handler = MenuItemHideForAltTabByTargetClick;
             handler?.Invoke(sender, e);
         }
 

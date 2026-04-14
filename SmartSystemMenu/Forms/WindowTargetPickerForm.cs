@@ -15,6 +15,9 @@ namespace SmartSystemMenu.Forms
     {
         private readonly LanguageSettings _language;
         private readonly Func<IntPtr, bool> _isInvalidTarget;
+        private readonly string _titleText;
+        private readonly string _instructionText;
+        private readonly string _dropHintText;
 
         private Label _lblInstruction;
         private Label _lblPreview;
@@ -27,10 +30,13 @@ namespace SmartSystemMenu.Forms
 
         public IntPtr SelectedHandle { get; private set; }
 
-        public WindowTargetPickerForm(LanguageSettings language, Func<IntPtr, bool> isInvalidTarget)
+        public WindowTargetPickerForm(LanguageSettings language, Func<IntPtr, bool> isInvalidTarget, string titleText = null, string instructionText = null, string dropHintText = null)
         {
             _language = language;
             _isInvalidTarget = isInvalidTarget ?? (_ => false);
+            _titleText = titleText;
+            _instructionText = instructionText;
+            _dropHintText = dropHintText;
             _currentHandle = IntPtr.Zero;
             _currentHighlightRect = Rectangle.Empty;
 
@@ -45,7 +51,7 @@ namespace SmartSystemMenu.Forms
 
         private void InitializeControls()
         {
-            Text = GetText("mi_hide_by_target", "Hide...");
+            Text = string.IsNullOrWhiteSpace(_titleText) ? GetText("mi_hide_by_target", "Hide...") : _titleText;
             ClientSize = new Size(520, 180);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
@@ -64,7 +70,7 @@ namespace SmartSystemMenu.Forms
                 Top = 12,
                 Width = 496,
                 Height = 36,
-                Text = GetText("window_picker_instruction", "Drag the target symbol onto a window to hide it immediately.")
+                Text = string.IsNullOrWhiteSpace(_instructionText) ? GetText("window_picker_instruction", "Drag the target symbol onto a window to hide it immediately.") : _instructionText
             };
 
             _pnlTarget = new Panel
@@ -90,7 +96,7 @@ namespace SmartSystemMenu.Forms
                 Height = 84,
                 BorderStyle = BorderStyle.FixedSingle,
                 Padding = new Padding(6),
-                Text = GetText("window_picker_drop_hint", "Drop on a window to hide it.")
+                Text = GetDropHintText()
             };
 
             _btnCancel = new Button
@@ -156,7 +162,7 @@ namespace SmartSystemMenu.Forms
 
             if (_currentHandle == IntPtr.Zero)
             {
-                _lblPreview.Text = GetText("window_picker_drop_hint", "Drop on a window to hide it.");
+                _lblPreview.Text = GetDropHintText();
                 return;
             }
 
@@ -264,6 +270,11 @@ namespace SmartSystemMenu.Forms
         {
             var value = _language?.GetValue(key);
             return string.IsNullOrWhiteSpace(value) ? fallback : value;
+        }
+
+        private string GetDropHintText()
+        {
+            return string.IsNullOrWhiteSpace(_dropHintText) ? GetText("window_picker_drop_hint", "Drop on a window to hide it.") : _dropHintText;
         }
     }
 }

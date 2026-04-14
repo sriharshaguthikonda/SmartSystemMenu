@@ -16,6 +16,7 @@ namespace SmartSystemMenu.Forms
 
         public event EventHandler<EventArgs<ApplicationSettings>> OkClick;
         public event EventHandler HideByTargetClick;
+        public event EventHandler HideForAltTabByTargetClick;
 
         public ApplicationSettingsForm(ApplicationSettings settings)
         {
@@ -99,14 +100,22 @@ namespace SmartSystemMenu.Forms
             btnCloser.Text = settings.Language.GetValue("closer_button_name");
             var hideByTargetText = settings.Language.GetValue("mi_hide_by_target");
             btnHideWindowByTarget.Text = string.IsNullOrWhiteSpace(hideByTargetText) ? settings.Language.GetValue("hide") + "..." : hideByTargetText;
+            var hideForAltTabText = settings.Language.GetValue("hide_for_alt_tab");
+            hideForAltTabText = string.IsNullOrWhiteSpace(hideForAltTabText) ? "Hide For Alt+Tab" : hideForAltTabText;
+            var hideForAltTabByTargetText = settings.Language.GetValue("mi_hide_for_alt_tab_by_target");
+            btnHideAltTabByTarget.Text = string.IsNullOrWhiteSpace(hideForAltTabByTargetText) ? hideForAltTabText + "..." : hideForAltTabByTargetText;
             btnApply.Text = settings.Language.GetValue("settings_btn_apply");
             btnCancel.Text = settings.Language.GetValue("settings_btn_cancel");
             Text = settings.Language.GetValue("settings_form");
 
             var hideItemName = MenuItemId.GetName(MenuItemId.SC_HIDE);
+            var hideForAltTabItemName = MenuItemId.GetName(MenuItemId.SC_HIDE_FOR_ALT_TAB);
             var hideAny = settings.MenuItems.Items.Any(x => x.Type == MenuItemType.Item && x.Name == hideItemName && x.Show);
+            var hideForAltTabAny = settings.MenuItems.Items.Any(x => x.Type == MenuItemType.Item && x.Name == hideForAltTabItemName && x.Show);
             btnHideWindowByTarget.Enabled = hideAny;
             btnHideWindowByTarget.Visible = hideAny;
+            btnHideAltTabByTarget.Enabled = hideForAltTabAny;
+            btnHideAltTabByTarget.Visible = hideForAltTabAny;
 
             txtNextHotkeys.Text = _settings.NextMonitor.ToString();
             txtNextHotkeys.Tag = _settings.NextMonitor;
@@ -454,6 +463,12 @@ namespace SmartSystemMenu.Forms
         private void ButtonHideWindowByTargetClick(object sender, EventArgs e)
         {
             var handler = HideByTargetClick;
+            handler?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void ButtonHideAltTabByTargetClick(object sender, EventArgs e)
+        {
+            var handler = HideForAltTabByTargetClick;
             handler?.Invoke(this, EventArgs.Empty);
         }
 
