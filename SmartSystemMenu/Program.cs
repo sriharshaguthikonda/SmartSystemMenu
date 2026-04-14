@@ -38,8 +38,8 @@ namespace SmartSystemMenu
             var windowFileName = Path.Combine(AssemblyUtils.AssemblyDirectory, "Window64.xml");
 #endif
 
-            var settings = File.Exists(settingsFileName) && File.Exists(languageFileName) ? ApplicationSettingsFile.Read(settingsFileName, languageFileName) : new ApplicationSettings();
-            var windowSettings = File.Exists(windowFileName) ? WindowSettings.Read(windowFileName) : new WindowSettings();
+            var settings = LoadApplicationSettings(settingsFileName, languageFileName);
+            var windowSettings = LoadWindowSettings(windowFileName);
 
             // Enable High DPI Support
             if (settings.EnableHighDPI)
@@ -471,6 +471,100 @@ namespace SmartSystemMenu
                         window.DisableMaximizeButton(true);
                     }
                 }
+            }
+        }
+
+        private static ApplicationSettings LoadApplicationSettings(string settingsFileName, string languageFileName)
+        {
+            var defaultSettings = new ApplicationSettings();
+            if (!File.Exists(settingsFileName))
+            {
+                TryWriteApplicationSettings(settingsFileName, defaultSettings);
+            }
+
+            if (!File.Exists(languageFileName))
+            {
+                return defaultSettings;
+            }
+
+            try
+            {
+                return ApplicationSettingsFile.Read(settingsFileName, languageFileName);
+            }
+            catch
+            {
+                BackupInvalidFile(settingsFileName, "invalid");
+                TryWriteApplicationSettings(settingsFileName, defaultSettings);
+                try
+                {
+                    return ApplicationSettingsFile.Read(settingsFileName, languageFileName);
+                }
+                catch
+                {
+                    return defaultSettings;
+                }
+            }
+        }
+
+        private static void TryWriteApplicationSettings(string settingsFileName, ApplicationSettings settings)
+        {
+            try
+            {
+                ApplicationSettingsFile.Save(settingsFileName, settings);
+            }
+            catch
+            {
+            }
+        }
+
+        private static WindowSettings LoadWindowSettings(string windowFileName)
+        {
+            if (!File.Exists(windowFileName))
+            {
+                return new WindowSettings();
+            }
+
+            try
+            {
+                return WindowSettings.Read(windowFileName);
+            }
+            catch
+            {
+                BackupInvalidFile(windowFileName, "invalid");
+                return new WindowSettings();
+            }
+        }
+
+        private static void BackupInvalidFile(string fileName, string suffix)
+        {
+            if (!File.Exists(fileName))
+            {
+                return;
+            }
+
+            try
+            {
+                var directory = Path.GetDirectoryName(fileName);
+                if (string.IsNullOrWhiteSpace(directory))
+                {
+                    return;
+                }
+
+                var name = Path.GetFileNameWithoutExtension(fileName);
+                var extension = Path.GetExtension(fileName);
+                var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+                var backupFileName = Path.Combine(directory, string.Format("{0}.{1}.{2}{3}.bak", name, suffix, timestamp, extension));
+                var number = 1;
+                while (File.Exists(backupFileName))
+                {
+                    backupFileName = Path.Combine(directory, string.Format("{0}.{1}.{2}.{3}{4}.bak", name, suffix, timestamp, number, extension));
+                    number++;
+                }
+
+                File.Copy(fileName, backupFileName);
+            }
+            catch
+            {
             }
         }
 
