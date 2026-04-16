@@ -10,9 +10,8 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SmartSystemMenu</RootNamespace>
     <AssemblyName>SmartSystemMenu</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
-    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+        <FileAlignment>512</FileAlignment>
     <LangVersion>9</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
@@ -363,11 +362,11 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="SmartSystemMenu64.exe" />
-    <Content Include="Images\ArrowDown.png" />
+        <Content Include="Images\ArrowDown.png" />
     <Content Include="Images\ArrowUp.png" />
     <Content Include="Language.xml">
       <SubType>Designer</SubType>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Images\SmartSystemMenu.png" />
     <Content Include="SmartSystemMenu.xml">

@@ -14,8 +14,26 @@ namespace SmartSystemMenu.Settings
         public static ApplicationSettings Read(string fileName, string languageFileName)
         {
             var settings = new ApplicationSettings();
-            var document = XDocument.Load(fileName);
-            var languageDocument = XDocument.Load(languageFileName);
+            XDocument document;
+            XDocument languageDocument;
+            
+            try
+            {
+                document = XDocument.Load(fileName);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to read settings: {ex.Message}", ex);
+            }
+            
+            try
+            {
+                languageDocument = XDocument.Load(languageFileName);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to read language file: {ex.Message}", ex);
+            }
 
             settings.ExcludedProcessItems = document
                 .XPathSelectElements("/smartSystemMenu/processExclusions/processName")
@@ -194,14 +212,18 @@ namespace SmartSystemMenu.Settings
                 };
 
             settings.LanguageName = languageName;
-            settings.Language.Items = languageDocument
+            var languageItems = languageDocument
                 .XPathSelectElements($"/language/items/{languageName}/item")
                 .Select(x => new
                 {
                     Name = x.Attribute("name") != null ? x.Attribute("name").Value : string.Empty,
                     Value = x.Attribute("value") != null ? x.Attribute("value").Value : string.Empty,
                 })
-                 .ToDictionary(x => x.Name, y => y.Value, StringComparer.OrdinalIgnoreCase);
+                .ToList();
+
+            settings.Language.Items = languageItems
+                .ToDictionary(x => x.Name, y => y.Value, StringComparer.OrdinalIgnoreCase)
+                ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
             return settings;
         }

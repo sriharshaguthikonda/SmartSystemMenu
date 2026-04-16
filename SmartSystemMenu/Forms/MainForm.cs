@@ -43,6 +43,7 @@ namespace SmartSystemMenu.Forms
         private SystemTrayMenu _systemTrayMenu;
         private MouseHook _hotKeyMouseHook;
         private Process _64BitProcess;
+        private bool _64BitProcessExtracted;
 #endif
 
         public MainForm(ApplicationSettings settings, WindowSettings windowSettings, IntPtr parentHandle)
@@ -77,6 +78,7 @@ namespace SmartSystemMenu.Forms
                     if (!File.Exists(filePath))
                     {
                         AssemblyUtils.ExtractFileFromAssembly(resourceName, filePath);
+                        _64BitProcessExtracted = true;
                     }
                     _64BitProcess = Process.Start(filePath, $"--parentHandle {Handle.ToInt64()}");
                 }
@@ -222,9 +224,34 @@ namespace SmartSystemMenu.Forms
             }
         }
 
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            // Unhook while the message loop is still alive so injected processes
+            // receive the WM_NULL broadcast and unload the hook DLL before we exit.
+            _callWndProcHook?.Stop();
+            _getMsgHook?.Stop();
+            _shellHook?.Stop();
+            _cbtHook?.Stop();
+
+            PostMessage((IntPtr)HWND_BROADCAST, WM_NULL, 0, 0);
+            SendNotifyMessage((IntPtr)HWND_BROADCAST, WM_NULL, 0, 0);
+
+            // Pump the message queue briefly so injected processes can process the
+            // broadcast and unload the DLL before we terminate.
+            var deadline = Environment.TickCount + 300;
+            while (Environment.TickCount < deadline)
+            {
+                Application.DoEvents();
+                Thread.Sleep(10);
+            }
+
+            base.OnFormClosing(e);
+        }
+
         protected override void OnClosed(EventArgs e)
         {
             SystemEvents.UserPreferenceChanged -= SystemEventsUserPreferenceChanged;
+            // Hooks already stopped in OnFormClosing; guard against double-stop.
             _callWndProcHook?.Stop();
             _getMsgHook?.Stop();
             _shellHook?.Stop();
@@ -256,18 +283,19 @@ namespace SmartSystemMenu.Forms
                     _64BitProcess.Kill();
                 }
 
-                try
+                if (_64BitProcessExtracted)
                 {
-                    File.Delete(_64BitProcess.StartInfo.FileName);
-                }
-                catch
-                {
+                    try
+                    {
+                        File.Delete(_64BitProcess.StartInfo.FileName);
+                    }
+                    catch
+                    {
+                    }
                 }
             }
 #endif
             base.OnClosed(e);
-            PostMessage((IntPtr)HWND_BROADCAST, WM_NULL, 0, 0);
-            SendNotifyMessage((IntPtr)HWND_BROADCAST, WM_NULL, 0, 0);
         }
 
         private void SystemEventsUserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)

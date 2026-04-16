@@ -40,11 +40,11 @@ namespace SmartSystemMenu.Forms
                 InitializeControls(settings);
                 ThemeUtils.ApplyTheme(this, _settings.ThemeMode);
             }
-            catch
+            catch (Exception ex)
             {
                 tabMain.Enabled = false;
                 btnApply.Enabled = false;
-                MessageBox.Show("Failed to read the settings.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Failed to read the settings.\n\n{ex.GetType().Name}: {ex.Message}\n\nStack:\n{ex.StackTrace}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -177,14 +177,16 @@ namespace SmartSystemMenu.Forms
             _grpbHiddenWindows.Controls.Add(_btnAddHiddenAltTabWindow);
             _grpbHiddenWindows.Controls.Add(_gvHiddenWindows);
             _tabpHiddenWindows.Controls.Add(_grpbHiddenWindows);
-
-            tabMain.TabPages.Insert(1, _tabpHiddenWindows);
+            // Tab is added to tabMain after text properties are set in InitializeControls
+            // to avoid ArgumentOutOfRangeException from TabPage.UpdateParent on .NET 4.8.
         }
 
         private void InitializeControls(ApplicationSettings settings)
         {
             tabpGeneral.Text = settings.Language.GetValue("tab_settings_general");
+            // Set text before inserting into tabMain to avoid TabControl.SetTabPage(-1) on .NET 4.8
             _tabpHiddenWindows.Text = GetLanguageText("tab_settings_hidden_windows", "Hidden Windows");
+            tabMain.TabPages.Insert(1, _tabpHiddenWindows);
             tabpMenuStart.Text = settings.Language.GetValue("tab_settings_menu_start");
             tabpMenuSize.Text = settings.Language.GetValue("tab_settings_menu_size");
             tabpMenuMoveTo.Text = settings.Language.GetValue("tab_settings_menu_move_to");

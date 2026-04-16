@@ -46,7 +46,7 @@ namespace SmartSystemMenu.Settings
             InitEventProcessNames = new List<string>();
             NoRestoreMenuProcessNames = new List<string>();
             HiddenWindowRules = new List<HiddenWindowRule>();
-            RememberHiddenTargets = false;
+            RememberHiddenTargets = true;
             MenuItems = new MenuItems();
             Closer = new CloserSettings();
             Dimmer = new DimmerSettings();
