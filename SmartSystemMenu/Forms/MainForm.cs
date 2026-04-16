@@ -1294,6 +1294,10 @@ namespace SmartSystemMenu.Forms
                                 var isChecked = window.Menu.IsMenuItemChecked(MenuItemId.SC_HIDE_FOR_ALT_TAB);
                                 window.Menu.CheckMenuItem(MenuItemId.SC_HIDE_FOR_ALT_TAB, !isChecked);
                                 window.HideForAltTab(!isChecked);
+                                if (!isChecked)
+                                {
+                                    RememberHiddenWindowRule(window.Handle, HiddenWindowAction.HideForAltTab);
+                                }
                             }
                             break;
 
@@ -1339,6 +1343,7 @@ namespace SmartSystemMenu.Forms
                         case MenuItemId.SC_HIDE:
                             {
                                 window.Hide();
+                                RememberHiddenWindowRule(window.Handle, HiddenWindowAction.Hide);
                             }
                             break;
 
