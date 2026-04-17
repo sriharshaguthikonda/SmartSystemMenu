@@ -95,6 +95,7 @@ namespace SmartSystemMenu.Forms
             {
                 _systemTrayMenu = new SystemTrayMenu(_settings);
                 _systemTrayMenu.MenuItemAutoStartClick += MenuItemAutoStartClick;
+                _systemTrayMenu.MenuItemEnableMenuInjectionClick += MenuItemEnableMenuInjectionClick;
                 _systemTrayMenu.MenuItemHideByTargetClick += MenuItemHideByTargetClick;
                 _systemTrayMenu.MenuItemHideForAltTabByTargetClick += MenuItemHideForAltTabByTargetClick;
                 _systemTrayMenu.MenuItemSettingsClick += MenuItemSettingsClick;
@@ -103,6 +104,7 @@ namespace SmartSystemMenu.Forms
                 _systemTrayMenu.MenuItemRestoreClick += MenuItemRestoreClick;
                 _systemTrayMenu.Create();
                 _systemTrayMenu.CheckMenuItemAutoStart(AutoStarter.IsAutoStartByRegisterEnabled(AssemblyUtils.AssemblyProductName, AssemblyUtils.AssemblyLocation));
+                _systemTrayMenu.CheckMenuItemEnableMenuInjection(_settings.EnableMenuInjection);
             }
 
             ThemeUtils.ApplyTheme(this, _settings.ThemeMode);
@@ -166,17 +168,14 @@ namespace SmartSystemMenu.Forms
             _callWndProcHook = new CallWndProcHook(Handle);
             _callWndProcHook.SysCommand += SysCommand;
             _callWndProcHook.InitMenu += InitMenu;
-            _callWndProcHook.Start();
 
             _getMsgHook = new GetMsgHook(Handle);
             _getMsgHook.SysCommand += SysCommand;
             _getMsgHook.InitMenu += InitMenu;
-            _getMsgHook.Start();
 
             _shellHook = new ShellHook(Handle);
             _shellHook.WindowCreated += WindowCreated;
             _shellHook.WindowDestroyed += WindowDestroyed;
-            _shellHook.Start();
 
             _cbtHook = new CBTHook(Handle);
             _cbtHook.WindowCreated += WindowCreated;
@@ -184,7 +183,11 @@ namespace SmartSystemMenu.Forms
             _cbtHook.MoveSize += WindowMoveSize;
             _cbtHook.MinMax += WindowMinMax;
             _cbtHook.Activate += WindowActivate;
-            _cbtHook.Start();
+
+            if (_settings.EnableMenuInjection)
+            {
+                StartHooks();
+            }
 
             _hotKeyHook = new HotKeyHook();
             _hotKeyHook.MenuItemHooked += HotKeyHooked;
@@ -226,25 +229,7 @@ namespace SmartSystemMenu.Forms
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            // Unhook while the message loop is still alive so injected processes
-            // receive the WM_NULL broadcast and unload the hook DLL before we exit.
-            _callWndProcHook?.Stop();
-            _getMsgHook?.Stop();
-            _shellHook?.Stop();
-            _cbtHook?.Stop();
-
-            PostMessage((IntPtr)HWND_BROADCAST, WM_NULL, 0, 0);
-            SendNotifyMessage((IntPtr)HWND_BROADCAST, WM_NULL, 0, 0);
-
-            // Pump the message queue briefly so injected processes can process the
-            // broadcast and unload the DLL before we terminate.
-            var deadline = Environment.TickCount + 300;
-            while (Environment.TickCount < deadline)
-            {
-                Application.DoEvents();
-                Thread.Sleep(10);
-            }
-
+            StopHooks();
             base.OnFormClosing(e);
         }
 
@@ -513,6 +498,45 @@ namespace SmartSystemMenu.Forms
                 data = null;
                 return false;
             }
+        }
+
+        private void StartHooks()
+        {
+            _callWndProcHook?.Start();
+            _getMsgHook?.Start();
+            _shellHook?.Start();
+            _cbtHook?.Start();
+        }
+
+        private void StopHooks()
+        {
+            _callWndProcHook?.Stop();
+            _getMsgHook?.Stop();
+            _shellHook?.Stop();
+            _cbtHook?.Stop();
+            PostMessage((IntPtr)HWND_BROADCAST, WM_NULL, 0, 0);
+            SendNotifyMessage((IntPtr)HWND_BROADCAST, WM_NULL, 0, 0);
+            var deadline = Environment.TickCount + 300;
+            while (Environment.TickCount < deadline)
+            {
+                Application.DoEvents();
+                Thread.Sleep(10);
+            }
+        }
+
+        private void MenuItemEnableMenuInjectionClick(object sender, EventArgs e)
+        {
+            _settings.EnableMenuInjection = !_settings.EnableMenuInjection;
+            if (_settings.EnableMenuInjection)
+            {
+                StartHooks();
+            }
+            else
+            {
+                StopHooks();
+            }
+            _systemTrayMenu?.CheckMenuItemEnableMenuInjection(_settings.EnableMenuInjection);
+            SaveApplicationSettings();
         }
 
         private void MenuItemAutoStartClick(object sender, EventArgs e)

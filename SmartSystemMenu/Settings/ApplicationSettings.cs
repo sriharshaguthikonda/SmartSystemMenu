@@ -15,6 +15,8 @@ namespace SmartSystemMenu.Settings
 
         public bool RememberHiddenTargets { get; set; }
 
+        public bool EnableMenuInjection { get; set; }
+
         public MenuItems MenuItems { get; set; }
 
         public CloserSettings Closer { get; set; }
@@ -47,6 +49,7 @@ namespace SmartSystemMenu.Settings
             NoRestoreMenuProcessNames = new List<string>();
             HiddenWindowRules = new List<HiddenWindowRule>();
             RememberHiddenTargets = true;
+            EnableMenuInjection = false;
             MenuItems = new MenuItems();
             Closer = new CloserSettings();
             Dimmer = new DimmerSettings();
@@ -116,6 +119,7 @@ namespace SmartSystemMenu.Settings
             settings.NextMonitor = (KeyboardShortcut)NextMonitor.Clone();
             settings.PreviousMonitor = (KeyboardShortcut)PreviousMonitor.Clone();
             settings.RememberHiddenTargets = RememberHiddenTargets;
+            settings.EnableMenuInjection = EnableMenuInjection;
             return settings;
         }
 

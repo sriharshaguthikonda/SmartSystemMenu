@@ -14,6 +14,7 @@ namespace SmartSystemMenu
     {
         private readonly ContextMenuStrip _systemTrayMenu;
         private readonly ToolStripMenuItem _menuItemAutoStart;
+        private readonly ToolStripMenuItem _menuItemEnableMenuInjection;
         private readonly ToolStripMenuItem _menuItemHideByTarget;
         private readonly ToolStripMenuItem _menuItemHideForAltTabByTarget;
         private readonly ToolStripMenuItem _menuItemRestore;
@@ -27,6 +28,7 @@ namespace SmartSystemMenu
         private bool _created;
 
         public event EventHandler MenuItemAutoStartClick;
+        public event EventHandler MenuItemEnableMenuInjectionClick;
         public event EventHandler MenuItemHideByTargetClick;
         public event EventHandler MenuItemHideForAltTabByTargetClick;
         public event EventHandler MenuItemSettingsClick;
@@ -37,6 +39,7 @@ namespace SmartSystemMenu
         public SystemTrayMenu(ApplicationSettings settings)
         {
             _menuItemAutoStart = new ToolStripMenuItem();
+            _menuItemEnableMenuInjection = new ToolStripMenuItem();
             _menuItemHideByTarget = new ToolStripMenuItem();
             _menuItemHideForAltTabByTarget = new ToolStripMenuItem();
             _menuItemRestore = new ToolStripMenuItem();
@@ -62,6 +65,12 @@ namespace SmartSystemMenu
                 _menuItemAutoStart.Size = new Size(175, 22);
                 _menuItemAutoStart.Text = _settings.Language.GetValue("mi_auto_start");
                 _menuItemAutoStart.Click += ItemAutoStartClick;
+
+                _menuItemEnableMenuInjection.Name = "miEnableMenuInjection";
+                _menuItemEnableMenuInjection.Size = new Size(175, 22);
+                _menuItemEnableMenuInjection.Text = "Enable Menu Injection";
+                _menuItemEnableMenuInjection.Checked = _settings.EnableMenuInjection;
+                _menuItemEnableMenuInjection.Click += ItemEnableMenuInjectionClick;
 
                 _menuItemSettings.Name = "miSettings";
                 _menuItemSettings.Size = new Size(175, 22);
@@ -167,7 +176,7 @@ namespace SmartSystemMenu
                     }
                 }
 
-                var trayItems = new List<ToolStripItem> { _menuItemAutoStart, _menuItemSeparator1 };
+                var trayItems = new List<ToolStripItem> { _menuItemAutoStart, _menuItemEnableMenuInjection, _menuItemSeparator1 };
                 if (hideAny)
                 {
                     trayItems.Add(_menuItemHideByTarget);
@@ -210,6 +219,11 @@ namespace SmartSystemMenu
             _menuItemAutoStart.Checked = check;
         }
 
+        public void CheckMenuItemEnableMenuInjection(bool check)
+        {
+            _menuItemEnableMenuInjection.Checked = check;
+        }
+
         public void Dispose()
         {
             Dispose(true);
@@ -221,6 +235,7 @@ namespace SmartSystemMenu
             if (disposing)
             {
                 _menuItemAutoStart?.Dispose();
+                _menuItemEnableMenuInjection?.Dispose();
                 _menuItemHideByTarget?.Dispose();
                 _menuItemHideForAltTabByTarget?.Dispose();
                 _menuItemRestore?.Dispose();
@@ -243,6 +258,12 @@ namespace SmartSystemMenu
         private void ItemAutoStartClick(object sender, EventArgs e)
         {
             var handler = MenuItemAutoStartClick;
+            handler?.Invoke(sender, e);
+        }
+
+        private void ItemEnableMenuInjectionClick(object sender, EventArgs e)
+        {
+            var handler = MenuItemEnableMenuInjectionClick;
             handler?.Invoke(sender, e);
         }
 

@@ -62,6 +62,11 @@ namespace SmartSystemMenu.Settings
                 hiddenWindowsElement.Attribute("remember") != null &&
                 hiddenWindowsElement.Attribute("remember").Value.ToLower() == "true";
 
+            var menuInjectionElement = document.XPathSelectElement("/smartSystemMenu/menuInjection");
+            settings.EnableMenuInjection = menuInjectionElement != null &&
+                menuInjectionElement.Attribute("enabled") != null &&
+                menuInjectionElement.Attribute("enabled").Value.ToLower() == "true";
+
             settings.HiddenWindowRules = document
                 .XPathSelectElements("/smartSystemMenu/hiddenWindows/item")
                 .Select(x =>
@@ -314,6 +319,9 @@ namespace SmartSystemMenu.Settings
                                      new XAttribute("priority", settings.SaveSelectedItems.Priority.ToString().ToLower()),
                                      new XAttribute("minimizeToTrayAlways", settings.SaveSelectedItems.MinimizeToTrayAlways.ToString().ToLower()),
                                      new XAttribute("buttons", settings.SaveSelectedItems.Buttons.ToString().ToLower())
+                                 ),
+                                 new XElement("menuInjection",
+                                     new XAttribute("enabled", settings.EnableMenuInjection.ToString().ToLower())
                                  ),
                                  new XElement("systemTrayIcon",
                                      new XAttribute("show", settings.ShowSystemTrayIcon.ToString().ToLower())
