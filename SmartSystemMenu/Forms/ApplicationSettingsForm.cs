@@ -216,16 +216,17 @@ namespace SmartSystemMenu.Forms
 
         private void InitializeControls(ApplicationSettings settings)
         {
+            // Set ALL tab texts before inserting _tabpHiddenWindows — any .Text assignment on a tab
+            // already in tabMain after an Insert() corrupts .NET 4.8 TabControl internal state.
             tabpGeneral.Text = settings.Language.GetValue("tab_settings_general");
-            // Set text before inserting into tabMain to avoid TabControl.SetTabPage(-1) on .NET 4.8
-            _tabpHiddenWindows.Text = GetLanguageText("tab_settings_hidden_windows", "Hidden Windows");
-            tabMain.TabPages.Insert(1, _tabpHiddenWindows);
             tabpMenuStart.Text = settings.Language.GetValue("tab_settings_menu_start");
             tabpMenuSize.Text = settings.Language.GetValue("tab_settings_menu_size");
             tabpMenuMoveTo.Text = settings.Language.GetValue("tab_settings_menu_move_to");
             tabpMenuDimmer.Text = settings.Language.GetValue("tab_settings_menu_dimmer");
             tabpMenu.Text = settings.Language.GetValue("tab_settings_menu");
             tabpMenuSaveSelectedItems.Text = settings.Language.GetValue("tab_settings_menu_save");
+            _tabpHiddenWindows.Text = GetLanguageText("tab_settings_hidden_windows", "Hidden Windows");
+            tabMain.TabPages.Insert(1, _tabpHiddenWindows);
             grpbLanguage.Text = settings.Language.GetValue("grpb_language");
             _grpbHiddenWindows.Text = GetLanguageText("grpb_hidden_windows", "Remembered Hidden Targets");
             grpbProcessExclusions.Text = settings.Language.GetValue("grpb_process_exclusions");
