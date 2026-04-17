@@ -535,7 +535,9 @@ namespace SmartSystemMenu.Forms
             {
                 StopHooks();
             }
+#if WIN32
             _systemTrayMenu?.CheckMenuItemEnableMenuInjection(_settings.EnableMenuInjection);
+#endif
             SaveApplicationSettings();
         }
 
