@@ -1,5 +1,13 @@
 # SmartSystemMenu — Agent / Contributor Guide
 
+## Active work
+
+- **Open issues:** see [`TODO.md`](./TODO.md) for P0/P1-sorted index, or [GitHub Issues](https://github.com/sriharshaguthikonda/SmartSystemMenu/issues).
+- **Working branch:** `codex/window-target-hide-picker` (non-default; default is `master`).
+
+---
+
+
 ## Architecture
 
 Two components ship together:
