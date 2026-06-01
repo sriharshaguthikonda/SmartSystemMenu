@@ -1,0 +1,25 @@
+﻿{
+    "schemaVersion":  "repo-map-artifact-branch/v1",
+    "repo":  "sriharshaguthikonda/SmartSystemMenu",
+    "generatedAt":  "2026-06-01T06:10:14.4192417Z",
+    "source":  "Repo_maps GitHub footprint publish runner",
+    "publishBranch":  "repo-intel-artifacts",
+    "mapCount":  2,
+    "totalBytes":  3156024,
+    "maps":  [
+                 {
+                     "name":  "codex/window-target-hide-picker",
+                     "ref":  "refs/remotes/origin/codex/window-target-hide-picker",
+                     "commit":  "1fecace4b039eb755eda53fa4d4149eb86aea3b0",
+                     "path":  ".repo-intel/branches/remote-origin/codex-window-target-hide-picker__1fecace4b039/repo-map-full.json",
+                     "bytes":  1626224
+                 },
+                 {
+                     "name":  "master",
+                     "ref":  "refs/remotes/origin/master",
+                     "commit":  "919e664937ed86c6b4b8b982771e07febc9b205c",
+                     "path":  ".repo-intel/branches/remote-origin/master__919e664937ed/repo-map-full.json",
+                     "bytes":  1522841
+                 }
+             ]
+}
